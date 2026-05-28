@@ -1,0 +1,34 @@
+package repository
+
+import (
+	"log/slog"
+
+	"github.com/Albert-Ti/go-diploma-tpl/internal/config"
+	"github.com/golang-migrate/migrate/v4"
+)
+
+type Repository interface {
+}
+
+func NewRepository() (Repository, error) {
+	slog.Info("Using database storage")
+
+	m, err := migrate.New("file://migrations", config.Envs.DatabaseDSN)
+	if err != nil {
+		return nil, err
+	}
+	defer m.Close()
+
+	err = m.Up()
+	switch err {
+	case nil:
+		slog.Info("Migrations have been successfully applied")
+	case migrate.ErrNoChange:
+		slog.Info("The database schema is up-to-date and no migrations are required")
+	default:
+		slog.Error("Migrations failed", "error", err)
+		return nil, err
+	}
+
+	return NewPgStorage(config.Envs.DatabaseDSN)
+}
