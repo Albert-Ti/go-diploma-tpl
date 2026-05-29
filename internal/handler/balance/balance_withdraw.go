@@ -1,4 +1,4 @@
-package handler
+package balance
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 )
 
-func Login(svc *service.Service) http.HandlerFunc {
+func BalanceWithdraw(svc *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 	}

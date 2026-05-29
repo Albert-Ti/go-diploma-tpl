@@ -4,13 +4,13 @@ MIGRATIONS_PATH = ./migrations
 .PHONY: run ping test migrate-up migrate-down migrate-create
 
 run:
-	go run cmd/shortener/main.go -d="postgres://postgres:postgres@localhost:5432/db?sslmode=disable"
+	go run cmd/gophermart/main.go -d="postgres://postgres:postgres@localhost:5432/db?sslmode=disable"
 
 ping:
 	curl http://localhost:8080/ping -i
 
 test:
-	go test ./...
+	go test ./... -v
 
 migrate-create:
 	@test -n "$(name)" || (echo "Error: name is required. Use: make migrate-create name=my_migration" && exit 1)

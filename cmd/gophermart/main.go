@@ -5,13 +5,17 @@ import (
 	"net/http"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/config"
-	"github.com/Albert-Ti/go-diploma-tpl/internal/handler"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/auth"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/balance"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/orders"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/middleware"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/repository"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
+	config.ParseFlag()
 
 	repo, e := repository.NewRepository()
 	if e != nil {
@@ -22,14 +26,16 @@ func main() {
 
 	r := chi.NewRouter()
 
-	r.Post("/api/user/register", handler.Register(svc))
-	r.Post("/api/user/login", handler.Login(svc))
-	r.Post("/api/user/orders", handler.AddOrders(svc))
-	r.Post("/api/user/balance/withdraw", handler.BalanceWithdraw(svc))
+	r.Use(middleware.GzipCompress)
 
-	r.Get("/api/user/orders", handler.GetOrders(svc))
-	r.Get("/api/user/balance", handler.GetBalance(svc))
-	r.Get("/api/user/withdrawals", handler.StatusBalance(svc))
+	r.Post("/api/user/register", auth.Register(svc))
+	r.Post("/api/user/login", auth.Login(svc))
+
+	r.Post("/api/user/orders", auth.Guard(orders.AddOrders(svc)))
+	r.Get("/api/user/orders", auth.Guard(orders.GetOrders(svc)))
+	r.Post("/api/user/balance/withdraw", auth.Guard(balance.BalanceWithdraw(svc)))
+	r.Get("/api/user/balance", auth.Guard(balance.GetBalance(svc)))
+	r.Get("/api/user/withdrawals", auth.Guard(balance.StatusBalance(svc)))
 
 	slog.Info("Running server", "host", config.Envs.RunAddr)
 

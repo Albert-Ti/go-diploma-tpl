@@ -1,4 +1,4 @@
-package handler
+package orders
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 )
 
-func GetBalance(svc *service.Service) http.HandlerFunc {
+func GetOrders(svc *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 	}
