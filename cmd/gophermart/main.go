@@ -11,6 +11,7 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/middleware"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/repository"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
+	chiMiddleware "github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -26,6 +27,9 @@ func main() {
 
 	r := chi.NewRouter()
 
+	r.Use(chiMiddleware.RealIP)
+	r.Use(chiMiddleware.Recoverer)
+	r.Use(chiMiddleware.Logger)
 	r.Use(middleware.GzipCompress)
 
 	r.Post("/api/user/register", auth.Register(svc))

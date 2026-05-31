@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/config"
@@ -10,6 +11,8 @@ import (
 )
 
 type Repository interface {
+	AddUser(ctx context.Context, login string, pass string) error
+	GetUser(ctx context.Context, login string) (int, string, error)
 }
 
 func NewRepository() (Repository, error) {
