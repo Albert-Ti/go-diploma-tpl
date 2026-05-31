@@ -18,7 +18,7 @@ type Repository interface {
 func NewRepository() (Repository, error) {
 	slog.Info("Using database storage")
 
-	m, err := migrate.New("file://migrations", config.Envs.DatabaseDSN)
+	m, err := migrate.New("file://migrations", config.Envs.DatabaseURI)
 	if err != nil {
 		return nil, err
 	}
@@ -35,5 +35,5 @@ func NewRepository() (Repository, error) {
 		return nil, err
 	}
 
-	return NewPgStorage(config.Envs.DatabaseDSN)
+	return NewPgStorage(config.Envs.DatabaseURI)
 }

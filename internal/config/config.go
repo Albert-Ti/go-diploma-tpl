@@ -6,34 +6,33 @@ import (
 )
 
 var Envs struct {
-	RunAddr         string
-	BaseURL         string
-	FileStoragePath string
-	DatabaseDSN     string
-	JWTSecretKey    string
+	RunAddr           string
+	DatabaseURI       string
+	JWTSecretKey      string
+	AccrualSystemAddr string
 }
 
 func ParseFlag() {
 	flag.StringVar(&Envs.RunAddr, "a", "localhost:8080", "address and port to run server")
-	flag.StringVar(&Envs.BaseURL, "b", "http://localhost:8080", "Base URL")
-	flag.StringVar(&Envs.DatabaseDSN, "d", "", "connection string to DB")
-	Envs.JWTSecretKey = "secret_key"
+	flag.StringVar(&Envs.DatabaseURI, "d", "", "connection string to DB")
+	flag.StringVar(&Envs.AccrualSystemAddr, "r", "", "address of the accrual calculation system")
+	Envs.JWTSecretKey = "default_secret_key"
 
 	flag.Parse()
 
-	if envRunAddr := os.Getenv("SERVER_ADDRESS"); envRunAddr != "" {
+	if envRunAddr := os.Getenv("RUN_ADDRESS"); envRunAddr != "" {
 		Envs.RunAddr = envRunAddr
 	}
 
-	if envBaseUrl := os.Getenv("BASE_URL"); envBaseUrl != "" {
-		Envs.BaseURL = envBaseUrl
-	}
-
-	if envDatabaseDSN := os.Getenv("DATABASE_DSN"); envDatabaseDSN != "" {
-		Envs.DatabaseDSN = envDatabaseDSN
+	if envDatabaseURI := os.Getenv("DATABASE_URI"); envDatabaseURI != "" {
+		Envs.DatabaseURI = envDatabaseURI
 	}
 
 	if envJWTSecretKey := os.Getenv("JWT_SECRET_KEY"); envJWTSecretKey != "" {
 		Envs.JWTSecretKey = envJWTSecretKey
+	}
+
+	if envAccrualSystemAddr := os.Getenv("ACCRUAL_SYSTEM_ADDRESS"); envAccrualSystemAddr != "" {
+		Envs.AccrualSystemAddr = envAccrualSystemAddr
 	}
 }
