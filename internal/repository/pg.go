@@ -21,18 +21,19 @@ func NewPgStorage(dsn string) (*PgStorage, error) {
 	}, nil
 }
 
-func (pg *PgStorage) AddUser(ctx context.Context, login string, pass string) error {
+func (pg *PgStorage) AddUser(ctx context.Context, login string, pass string) (int, error) {
 	sql := `
 		INSERT INTO users (login, password)
 		VALUES ($1, $2)
+		RETURNING id
 	`
-
-	_, err := pg.pool.Exec(ctx, sql, login, pass)
+	var id int
+	err := pg.pool.QueryRow(ctx, sql, login, pass).Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return id, nil
 }
 
 func (pg *PgStorage) GetUser(ctx context.Context, login string) (int, string, error) {

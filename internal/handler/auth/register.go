@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
@@ -25,7 +26,7 @@ func Register(svc *service.Service) http.HandlerFunc {
 			return
 		}
 
-		err := svc.Register(r.Context(), req.Login, req.Password)
+		userID, err := svc.Register(r.Context(), req.Login, req.Password)
 		if err != nil {
 			if isUniqueViolation(err) {
 				http.Error(w, "Login already exist", http.StatusConflict)
@@ -34,6 +35,13 @@ func Register(svc *service.Service) http.HandlerFunc {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
+
+		token, err := CreateToken(strconv.Itoa(userID))
+		if err != nil {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		http.SetCookie(w, CreateCookie("token", token))
 
 		w.WriteHeader(http.StatusOK)
 	}

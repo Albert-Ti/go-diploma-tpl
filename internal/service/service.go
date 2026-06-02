@@ -22,10 +22,10 @@ func NewService(repo repository.Repository) *Service {
 	return &Service{repository: repo}
 }
 
-func (s *Service) Register(ctx context.Context, login string, pass string) error {
+func (s *Service) Register(ctx context.Context, login string, pass string) (int, error) {
 	salt, err := utils.RandomHash(8)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	hash := hashPassword(salt, pass)

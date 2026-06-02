@@ -18,30 +18,27 @@ func RandomHash(length int) (string, error) {
 }
 
 func AlgoLuna(order string) bool {
-	numStr := strings.Split(order, "")
-	sum := 0
+	order = strings.TrimSpace(order)
 
-	for i, v := range numStr {
-		n, err := strconv.Atoi(v)
+	var sum int
+	var isSecond bool
+
+	for i := len(order) - 1; i >= 0; i-- {
+		n, err := strconv.Atoi(string(order[i]))
 		if err != nil {
-			panic(err)
+			return false
 		}
-		if i%2 == 0 {
-			s := n * 2
-			if s > 10 {
-				res := 0
-				slice := strings.SplitSeq(strconv.Itoa(s), "")
-				for v := range slice {
-					n2, _ := strconv.Atoi(v)
-					res += n2
-				}
-				sum += res
-			} else {
-				sum += s
+
+		if isSecond {
+			n *= 2
+			if n >= 10 {
+				n = n/10 + n%10
 			}
-		} else {
-			sum += n
 		}
+
+		sum += n
+		isSecond = !isSecond
 	}
+
 	return sum%10 == 0
 }

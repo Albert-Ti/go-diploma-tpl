@@ -11,7 +11,7 @@ import (
 )
 
 type Repository interface {
-	AddUser(ctx context.Context, login string, pass string) error
+	AddUser(ctx context.Context, login string, pass string) (int, error)
 	GetUser(ctx context.Context, login string) (int, string, error)
 }
 
