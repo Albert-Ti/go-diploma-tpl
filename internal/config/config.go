@@ -15,7 +15,7 @@ var Envs struct {
 func ParseFlag() {
 	flag.StringVar(&Envs.RunAddr, "a", "localhost:8080", "address and port to run server")
 	flag.StringVar(&Envs.DatabaseURI, "d", "", "connection string to DB")
-	flag.StringVar(&Envs.AccrualSystemAddr, "r", "", "address of the accrual calculation system")
+	flag.StringVar(&Envs.AccrualSystemAddr, "r", "localhost:8081", "address of the accrual calculation system")
 	Envs.JWTSecretKey = "default_secret_key"
 
 	flag.Parse()

@@ -1,17 +1,17 @@
-package orders
+package repository
 
 import "fmt"
 
-type Status int
+type StatusOrder int
 
 const (
-	StatusNew Status = iota
+	StatusNew StatusOrder = iota
 	StatusProcessing
 	StatusInvalid
 	StatusProcessed
 )
 
-func (s Status) String() string {
+func (s StatusOrder) String() string {
 	switch s {
 	case StatusNew:
 		return "NEW"

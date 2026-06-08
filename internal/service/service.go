@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,7 +10,11 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/utils"
 )
 
-var ErrUnauthorized = errors.New("Invalid password")
+var (
+	ErrUnauthorized               = errors.New("Invalid password")
+	ErrOrderAlreadyExistsForUser  = errors.New("Order already exists for this user")
+	ErrOrderAlreadyExistsForOther = errors.New("Order already exists for other user")
+)
 
 type Service struct {
 	repository repository.Repository
@@ -28,8 +30,8 @@ func (s *Service) Register(ctx context.Context, login string, pass string) (int,
 		return 0, err
 	}
 
-	hash := hashPassword(salt, pass)
-	return s.repository.AddUser(ctx, login, hash)
+	hash := utils.HashPassword(salt, pass)
+	return s.repository.Registration(ctx, login, hash)
 }
 
 func (s *Service) Login(ctx context.Context, login string, pass string) (int, error) {
@@ -39,7 +41,7 @@ func (s *Service) Login(ctx context.Context, login string, pass string) (int, er
 		return 0, err
 	}
 	salt := strings.Split(storedHash, ".")[0]
-	hash := hashPassword(salt, pass)
+	hash := utils.HashPassword(salt, pass)
 
 	if storedHash != hash {
 		return 0, ErrUnauthorized
@@ -48,8 +50,29 @@ func (s *Service) Login(ctx context.Context, login string, pass string) (int, er
 	return userID, nil
 }
 
-func hashPassword(salt string, pass string) string {
-	sum := sha256.Sum256([]byte(pass + salt))
-	encStr := base64.StdEncoding.EncodeToString(sum[:])
-	return fmt.Sprint(salt, ".", encStr)
+func (s *Service) AddOrder(ctx context.Context, order string, userID int) error {
+	err := s.repository.CreateOrder(ctx, order, userID)
+
+	classifier := repository.NewPostgresErrorClassifier()
+	classification := classifier.Classify(err)
+
+	if err != nil {
+		if classification == repository.NonRetriable {
+			existingUserID, getErr := s.repository.GetOrderUserID(ctx, order)
+			if getErr != nil {
+				return fmt.Errorf("Failed to check existing order: %w", getErr)
+			}
+
+			if existingUserID == userID {
+				return ErrOrderAlreadyExistsForUser
+			}
+			return ErrOrderAlreadyExistsForOther
+		}
+	}
+	return nil
+}
+
+func (s *Service) GetOrders(ctx context.Context, userID int) error {
+
+	return nil
 }

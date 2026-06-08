@@ -2,7 +2,10 @@ package utils
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -41,4 +44,10 @@ func AlgoLuna(order string) bool {
 	}
 
 	return sum%10 == 0
+}
+
+func HashPassword(salt string, pass string) string {
+	sum := sha256.Sum256([]byte(pass + salt))
+	encStr := base64.StdEncoding.EncodeToString(sum[:])
+	return fmt.Sprint(salt, ".", encStr)
 }

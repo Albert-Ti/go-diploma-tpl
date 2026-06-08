@@ -24,16 +24,16 @@ CREATE TABLE orders (
   id BIGSERIAL PRIMARY KEY,
   number VARCHAR(255) UNIQUE NOT NULL,
   status INTEGER,
-  accrual INTEGER,
+  NUMERIC(10,2) DEFAULT 0,,  -- ранее был INTEGER
   user_id BIGINT REFERENCES users(id),
   uploaded_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE user_balance (
   id BIGSERIAL PRIMARY KEY,
-  current INTEGER,
-  withdraw INTEGER
-  user_id BIGINT REFERENCES users(id),
+  NUMERIC(10,2) DEFAULT 0,  -- ранее был INTEGER
+  NUMERIC(10,2) DEFAULT 0,   -- ранее был INTEGER
+  user_id BIGINT REFERENCES users(id)
 );
 ```
 

@@ -5,14 +5,18 @@ import (
 	"log/slog"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/config"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type Repository interface {
-	AddUser(ctx context.Context, login string, pass string) (int, error)
+	Registration(ctx context.Context, login string, pass string) (int, error)
 	GetUser(ctx context.Context, login string) (int, string, error)
+	CreateOrder(ctx context.Context, order string, userID int) error
+	GetOrders(ctx context.Context, userID int) ([]models.GetOrdersResp, error)
+	GetOrderUserID(ctx context.Context, order string) (int, error)
 }
 
 func NewRepository() (Repository, error) {

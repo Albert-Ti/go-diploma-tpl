@@ -6,6 +6,9 @@ MIGRATIONS_PATH = ./migrations
 run:
 	go run cmd/gophermart/main.go -d="postgres://postgres:postgres@localhost:5432/db?sslmode=disable"
 
+run-accrual:
+	./cmd/accrual/accrual_darwin_arm64 -a :8081
+
 ping:
 	curl http://localhost:8080/ping -i
 
