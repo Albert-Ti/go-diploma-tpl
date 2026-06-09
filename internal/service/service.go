@@ -58,15 +58,15 @@ func (s *Service) AddOrder(ctx context.Context, order string, userID int) error 
 
 	if err != nil {
 		if classification == repository.NonRetriable {
-			existingUserID, getErr := s.repository.GetOrderUserID(ctx, order)
+			_, getErr := s.repository.GetOrderUserID(ctx, order)
 			if getErr != nil {
 				return fmt.Errorf("Failed to check existing order: %w", getErr)
 			}
 
-			if existingUserID == userID {
-				return ErrOrderAlreadyExistsForUser
-			}
-			return ErrOrderAlreadyExistsForOther
+			// if existingUserID == userID {
+			// 	return ErrOrderAlreadyExistsForUser
+			// }
+			// return ErrOrderAlreadyExistsForOther
 		}
 	}
 	return nil

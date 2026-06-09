@@ -3,6 +3,7 @@ package orders
 import (
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -11,12 +12,13 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/utils"
 )
 
-func AddOrders(svc *service.Service) http.HandlerFunc {
+func AddOrders(svc *service.Service, wp *WorkerPool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		b, _ := io.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
+		orderID := string(body)
 
-		if !utils.AlgoLuna(string(b)) {
+		if !utils.AlgoLuna(orderID) {
 			http.Error(w, "Incorrect order number format", http.StatusUnprocessableEntity)
 			return
 		}
@@ -31,7 +33,8 @@ func AddOrders(svc *service.Service) http.HandlerFunc {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
-		errOrder := svc.AddOrder(r.Context(), string(b), id)
+
+		errOrder := svc.AddOrder(r.Context(), orderID, id)
 
 		switch {
 		case errors.Is(errOrder, service.ErrOrderAlreadyExistsForUser):
@@ -43,5 +46,14 @@ func AddOrders(svc *service.Service) http.HandlerFunc {
 		default:
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
+
+		hash, _ := utils.RandomHash(5)
+
+		wp.AddTask(hash)
+
+		go func() {
+			slog.Info("results", "response", <-wp.results)
+
+		}()
 	}
 }
