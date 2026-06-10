@@ -9,8 +9,6 @@ import (
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
-	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func Register(svc *service.Service) http.HandlerFunc {
@@ -28,8 +26,8 @@ func Register(svc *service.Service) http.HandlerFunc {
 
 		userID, err := svc.Register(r.Context(), req.Login, req.Password)
 		if err != nil {
-			if isUniqueViolation(err) {
-				http.Error(w, "Login already exist", http.StatusConflict)
+			if errors.Is(err, service.ErrLoginAlreadyExists) {
+				http.Error(w, err.Error(), http.StatusConflict)
 				return
 			}
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -45,9 +43,4 @@ func Register(svc *service.Service) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 	}
-}
-
-func isUniqueViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation
 }

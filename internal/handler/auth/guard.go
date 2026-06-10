@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/config"
@@ -69,10 +70,14 @@ func Guard(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func GetAuthUserID(ctx context.Context) (string, error) {
+func GetAuthUserID(ctx context.Context) (int, error) {
 	userID, ok := ctx.Value(UserIDKey).(string)
 	if !ok || userID == "" {
-		return "", errors.New("User ID not found")
+		return 0, errors.New("User ID not found")
 	}
-	return userID, nil
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		return 0, errors.New("User ID not found")
+	}
+	return id, nil
 }
