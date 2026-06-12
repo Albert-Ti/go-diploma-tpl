@@ -9,8 +9,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var ErrConflictuser error = errors.New("Order has already been uploaded by this user")
-
 type PgStorage struct {
 	pool          *pgxpool.Pool
 	pgErrConflict error
@@ -41,7 +39,7 @@ func (pg *PgStorage) addUserBalanceWithTx(ctx context.Context, tx pgx.Tx, userID
 	return err
 }
 
-func (pg *PgStorage) Registration(ctx context.Context, login string, pass string) (int, error) {
+func (pg *PgStorage) Register(ctx context.Context, login string, pass string) (int, error) {
 	tx, err := pg.pool.Begin(ctx)
 	if err != nil {
 		return 0, err
@@ -90,7 +88,7 @@ func (pg *PgStorage) CreateOrder(ctx context.Context, order string, userID int) 
 		VALUES ($1, $2, $3)
 	`
 
-	_, err := pg.pool.Exec(ctx, sql, order, StatusNew, userID)
+	_, err := pg.pool.Exec(ctx, sql, order, models.StatusNew, userID)
 	if err != nil {
 		return err
 	}
@@ -103,7 +101,6 @@ func (pg *PgStorage) GetOrders(ctx context.Context, userID int) ([]models.GetOrd
 		SELECT number, status, accrual, uploaded_at FROM orders
 		WHERE user_id = $1
 	`
-
 	rows, err := pg.pool.Query(ctx, sql, userID)
 	if err != nil {
 		return []models.GetOrdersResp{}, err
@@ -121,6 +118,9 @@ func (pg *PgStorage) GetOrders(ctx context.Context, userID int) ([]models.GetOrd
 		results = append(results, m)
 	}
 
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
 	return results, nil
 }
 
@@ -129,4 +129,51 @@ func (pg *PgStorage) GetOrderUserID(ctx context.Context, order string) (int, err
 	var userID int
 	err := pg.pool.QueryRow(ctx, sql, order).Scan(&userID)
 	return userID, err
+}
+
+func (pg *PgStorage) UpdateStatusOrder(ctx context.Context, order string, status models.OrderStatus) error {
+	sql := `UPDATE orders SET status = $1 WHERE number = $2`
+
+	_, err := pg.pool.Exec(ctx, sql, status, order)
+
+	return err
+}
+
+func (pg *PgStorage) ProcessedOrder(ctx context.Context, order string, status models.OrderStatus, accrual float64, userID int) error {
+	tx, err := pg.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}()
+
+	_, err = tx.Exec(ctx,
+		`UPDATE orders SET status = $1, accrual = $2 WHERE number = $3`,
+		status, accrual, order)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx,
+		`UPDATE user_balance SET current = current + $1 WHERE user_id = $2`,
+		accrual, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (pg *PgStorage) GetBalance(ctx context.Context, userID int) (models.GetBalanceResp, error) {
+	sql := `SELECT current, withdrawn FROM user_balance WHERE user_id = $1`
+
+	var m models.GetBalanceResp
+	if err := pg.pool.QueryRow(ctx, sql, userID).Scan(&m.Current, &m.Withdraw); err != nil {
+		return models.GetBalanceResp{}, err
+	}
+
+	return m, nil
 }

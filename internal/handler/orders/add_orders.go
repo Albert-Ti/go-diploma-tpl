@@ -3,9 +3,7 @@ package orders
 import (
 	"errors"
 	"io"
-	"log/slog"
 	"net/http"
-	"strconv"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/auth"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
@@ -28,13 +26,8 @@ func AddOrders(svc *service.Service, wp *WorkerPool) http.HandlerFunc {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		id, err := strconv.Atoi(userID)
-		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
 
-		errOrder := svc.AddOrder(r.Context(), orderID, id)
+		errOrder := svc.AddOrder(r.Context(), orderID, userID)
 
 		switch {
 		case errors.Is(errOrder, service.ErrOrderAlreadyExistsForUser):
@@ -47,13 +40,6 @@ func AddOrders(svc *service.Service, wp *WorkerPool) http.HandlerFunc {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 
-		hash, _ := utils.RandomHash(5)
-
-		wp.AddTask(hash)
-
-		go func() {
-			slog.Info("results", "response", <-wp.results)
-
-		}()
+		wp.AddTask(orderID, userID)
 	}
 }

@@ -1,27 +1,30 @@
 package orders
 
 import (
-	"fmt"
+	"context"
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 )
 
 type WorkerPool struct {
+	svc       *service.Service
 	workers   int
 	queueSize int
-	tasks     chan string
-	results   chan int
+	tasks     chan models.TaskOrder
 	done      chan struct{}
 	wg        sync.WaitGroup
 }
 
-func NewWorkerPool(numWorkers int, queueSize int) *WorkerPool {
+func NewWorkerPool(svc *service.Service, numWorkers int, queueSize int) *WorkerPool {
 	wp := &WorkerPool{
 		workers:   numWorkers,
 		queueSize: queueSize,
-		tasks:     make(chan string, queueSize),
-		results:   make(chan int, queueSize),
+		tasks:     make(chan models.TaskOrder, queueSize),
+		svc:       svc,
 	}
 
 	go func() {
@@ -40,32 +43,38 @@ func (wp *WorkerPool) worker(id int) {
 	for {
 		select {
 		case task := <-wp.tasks:
-			fmt.Println("рабочий", id, "запущена задача", task)
+			slog.Info("Worker Pool", "worker", id, "started task", task)
 
 			time.Sleep(time.Second)
+			if err := wp.svc.CheckAccrualOrder(context.Background(), task); err != nil {
+				slog.Error("Worker Pool", "worker", id, "error", err)
+			}
 
-			wp.results <- checkAccrualOrder(task)
-
-			fmt.Println("рабочий", id, "закончил задача", task)
+			slog.Info("Worker Pool", "worker", id, "completed task", task)
 		case <-wp.done:
 			return
 		}
 	}
 }
 
-func (wp *WorkerPool) AddTask(task string) {
+func (wp *WorkerPool) AddTask(orderID string, userID int) {
+	task := models.TaskOrder{
+		OrderID: orderID,
+		UserID:  userID,
+	}
 	select {
+
 	case wp.tasks <- task:
-		slog.Info("Список", "задач", len(wp.tasks))
+		slog.Info("Added", "task", task.OrderID)
 	default:
-		slog.Info("очередь заполнена, задача", task, "не добавлена")
+		slog.Info("Queue is full, task", task.OrderID, "not added")
 	}
 }
 
 func (wp *WorkerPool) Stop() {
-	wp.wg.Wait()      // ждём завершения всех воркеров
-	close(wp.done)    // сигнал воркерам завершиться
-	close(wp.tasks)   // закрываем канал задач
-	close(wp.results) // закрываем канал результатов
-	slog.Info("Worker Pool остановлен")
+	close(wp.done)
+
+	wp.wg.Wait()
+	close(wp.tasks)
+	slog.Info("Worker Pool stopped")
 }

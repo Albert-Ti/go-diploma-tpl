@@ -116,6 +116,20 @@ func (mr *MockRepositoryMockRecorder) GetUser(ctx, login any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockRepository)(nil).GetUser), ctx, login)
 }
 
+// ProcessedOrder mocks base method.
+func (m *MockRepository) ProcessedOrder(ctx context.Context, order string, status models.OrderStatus, accrual float64, userID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessedOrder", ctx, order, status, accrual, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessedOrder indicates an expected call of ProcessedOrder.
+func (mr *MockRepositoryMockRecorder) ProcessedOrder(ctx, order, status, accrual, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessedOrder", reflect.TypeOf((*MockRepository)(nil).ProcessedOrder), ctx, order, status, accrual, userID)
+}
+
 // Register mocks base method.
 func (m *MockRepository) Register(ctx context.Context, login, pass string) (int, error) {
 	m.ctrl.T.Helper()
@@ -129,4 +143,18 @@ func (m *MockRepository) Register(ctx context.Context, login, pass string) (int,
 func (mr *MockRepositoryMockRecorder) Register(ctx, login, pass any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockRepository)(nil).Register), ctx, login, pass)
+}
+
+// UpdateStatusOrder mocks base method.
+func (m *MockRepository) UpdateStatusOrder(ctx context.Context, order string, status models.OrderStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStatusOrder", ctx, order, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStatusOrder indicates an expected call of UpdateStatusOrder.
+func (mr *MockRepositoryMockRecorder) UpdateStatusOrder(ctx, order, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusOrder", reflect.TypeOf((*MockRepository)(nil).UpdateStatusOrder), ctx, order, status)
 }

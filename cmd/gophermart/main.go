@@ -35,14 +35,14 @@ func main() {
 	r.Post("/api/user/register", auth.Register(svc))
 	r.Post("/api/user/login", auth.Login(svc))
 
-	wp := orders.NewWorkerPool(3, 10)
+	wp := orders.NewWorkerPool(svc, 3, 10)
 	defer wp.Stop()
 
 	r.Post("/api/user/orders", auth.Guard(orders.AddOrders(svc, wp)))
 	r.Get("/api/user/orders", auth.Guard(orders.GetOrders(svc)))
 	r.Post("/api/user/balance/withdraw", auth.Guard(balance.BalanceWithdraw(svc)))
 	r.Get("/api/user/balance", auth.Guard(balance.GetBalance(svc)))
-	r.Get("/api/user/withdrawals", auth.Guard(balance.StatusBalance(svc)))
+	r.Get("/api/user/withdrawals", auth.Guard(balance.GetWithdrawals(svc)))
 
 	slog.Info("Running server", "host", config.Envs.RunAddr)
 
