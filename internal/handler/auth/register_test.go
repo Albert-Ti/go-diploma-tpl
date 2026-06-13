@@ -36,7 +36,7 @@ func TestRegister(t *testing.T) {
 			body:           models.AuthRequest{Login: "test", Password: "pass"},
 			expectedStatus: http.StatusOK,
 			setupMock: func(mock *mocks.MockRepository) {
-				mock.EXPECT().Register(gomock.Any(), "test", gomock.Any()).
+				mock.EXPECT().RegisterTx(gomock.Any(), "test", gomock.Any()).
 					Return(1, nil)
 			},
 		},
@@ -53,7 +53,7 @@ func TestRegister(t *testing.T) {
 			expectedStatus: http.StatusConflict,
 			setupMock: func(mock *mocks.MockRepository) {
 				mock.EXPECT().
-					Register(gomock.Any(), "test", gomock.Any()).
+					RegisterTx(gomock.Any(), "test", gomock.Any()).
 					Return(0, service.ErrLoginAlreadyExists)
 			},
 		},

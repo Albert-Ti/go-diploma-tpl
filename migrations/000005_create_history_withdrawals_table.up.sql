@@ -1,0 +1,7 @@
+CREATE TABLE withdrawals (
+    id BIGSERIAL PRIMARY KEY,
+    order_number VARCHAR(255) NOT NULL,
+    sum NUMERIC(10,2) NOT NULL,
+    processed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    user_id BIGINT REFERENCES users(id)
+);

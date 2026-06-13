@@ -12,14 +12,16 @@ import (
 )
 
 type Repository interface {
-	Register(ctx context.Context, login string, pass string) (int, error)
+	RegisterTx(ctx context.Context, login string, pass string) (int, error)
 	GetUser(ctx context.Context, login string) (int, string, error)
 	CreateOrder(ctx context.Context, order string, userID int) error
 	GetOrders(ctx context.Context, userID int) ([]models.GetOrdersResp, error)
 	GetOrderUserID(ctx context.Context, order string) (int, error)
 	GetBalance(ctx context.Context, userID int) (models.GetBalanceResp, error)
 	UpdateStatusOrder(ctx context.Context, order string, status models.OrderStatus) error
-	ProcessedOrder(ctx context.Context, order string, status models.OrderStatus, accrual float64, userID int) error
+	ProcessedOrderTx(ctx context.Context, order string, status models.OrderStatus, accrual float64, userID int) error
+	BalanceWithdrawalsTx(ctx context.Context, order string, sum float64, userID int) error
+	GetWithdrawals(ctx context.Context, userID int) ([]models.WithdrawalsResp, error)
 }
 
 func NewRepository() (Repository, error) {

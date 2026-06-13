@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -26,37 +25,27 @@ func NewPgStorage(dsn string) (*PgStorage, error) {
 	}, nil
 }
 
-func (pg *PgStorage) addUserWithTx(ctx context.Context, tx pgx.Tx, login string, pass string) (int, error) {
-	sql := `INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id`
-	var id int
-	err := tx.QueryRow(ctx, sql, login, pass).Scan(&id)
-	return id, err
-}
-
-func (pg *PgStorage) addUserBalanceWithTx(ctx context.Context, tx pgx.Tx, userID int) error {
-	sql := `INSERT INTO user_balance (user_id) VALUES ($1)`
-	_, err := tx.Exec(ctx, sql, userID)
-	return err
-}
-
-func (pg *PgStorage) Register(ctx context.Context, login string, pass string) (int, error) {
+func (pg *PgStorage) RegisterTx(ctx context.Context, login string, pass string) (int, error) {
 	tx, err := pg.pool.Begin(ctx)
 	if err != nil {
 		return 0, err
 	}
-	defer func() {
-		if err != nil {
-			tx.Rollback(ctx)
-		}
-	}()
 
-	userID, err := pg.addUserWithTx(ctx, tx, login, pass)
-	if err != nil {
+	defer tx.Rollback(ctx)
+
+	var userID int
+	errUser := tx.QueryRow(ctx,
+		`INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id`,
+		login, pass).Scan(&userID)
+	if errUser != nil {
 		return 0, err
 	}
 
-	if err := pg.addUserBalanceWithTx(ctx, tx, userID); err != nil {
-		return 0, err
+	_, errBalance := tx.Exec(ctx,
+		`INSERT INTO user_balance (user_id) VALUES ($1)`,
+		userID)
+	if errUser != nil {
+		return 0, errBalance
 	}
 
 	if err = tx.Commit(ctx); err != nil {
@@ -139,7 +128,7 @@ func (pg *PgStorage) UpdateStatusOrder(ctx context.Context, order string, status
 	return err
 }
 
-func (pg *PgStorage) ProcessedOrder(ctx context.Context, order string, status models.OrderStatus, accrual float64, userID int) error {
+func (pg *PgStorage) ProcessedOrderTx(ctx context.Context, order string, status models.OrderStatus, accrual float64, userID int) error {
 	tx, err := pg.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -176,4 +165,51 @@ func (pg *PgStorage) GetBalance(ctx context.Context, userID int) (models.GetBala
 	}
 
 	return m, nil
+}
+
+func (pg *PgStorage) BalanceWithdrawalsTx(ctx context.Context, order string, sum float64, userID int) error {
+	tx, err := pg.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback(ctx)
+
+	_, errBalance := tx.Exec(ctx,
+		`UPDATE user_balance SET current = current - $1, withdrawn = withdrawn + $1 WHERE user_id = $2`,
+		sum, userID)
+	if errBalance != nil {
+		return errBalance
+	}
+
+	_, errWithdrawals := tx.Exec(ctx,
+		`INSERT INTO withdrawals (order_number, sum, user_id) VALUES($1, $2, $3)`,
+		order, sum, userID)
+	if errWithdrawals != nil {
+		return errWithdrawals
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (pg *PgStorage) GetWithdrawals(ctx context.Context, userID int) ([]models.WithdrawalsResp, error) {
+	sql := `SELECT order_number, sum, processed_at FROM withdrawals WHERE user_id = $1`
+
+	rows, err := pg.pool.Query(ctx, sql, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]models.WithdrawalsResp, 0)
+	for rows.Next() {
+		var m models.WithdrawalsResp
+		err := rows.Scan(&m.Order, &m.Sum, &m.ProcessedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, m)
+	}
+
+	return results, nil
 }

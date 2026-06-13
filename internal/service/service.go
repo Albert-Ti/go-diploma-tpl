@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -40,7 +41,7 @@ func (s *Service) Register(ctx context.Context, login string, pass string) (int,
 	}
 
 	hash := utils.HashPassword(salt, pass)
-	userID, err := s.repository.Register(ctx, login, hash)
+	userID, err := s.repository.RegisterTx(ctx, login, hash)
 	classifier := repository.NewPostgresErrorClassifier()
 	classification := classifier.Classify(err)
 
@@ -102,6 +103,7 @@ func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) 
 	}
 
 	for {
+		slog.Info("Iteration", "task", task.OrderID)
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlAccrual.String(), nil)
 		if err != nil {
 			return err
@@ -124,7 +126,7 @@ func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) 
 
 			switch m.Status {
 			case "PROCESSED":
-				err := s.repository.ProcessedOrder(ctx, task.OrderID, models.StatusProcessed, m.Accrual, task.UserID)
+				err := s.repository.ProcessedOrderTx(ctx, task.OrderID, models.StatusProcessed, m.Accrual, task.UserID)
 				if err != nil {
 					return err
 				}
@@ -168,4 +170,12 @@ func (s *Service) GetOrders(ctx context.Context, userID int) ([]models.GetOrders
 
 func (s *Service) GetBalance(ctx context.Context, userID int) (models.GetBalanceResp, error) {
 	return s.repository.GetBalance(ctx, userID)
+}
+
+func (s *Service) BalanceWithdrawals(ctx context.Context, order string, sum float64, userID int) error {
+	return s.repository.BalanceWithdrawalsTx(ctx, order, sum, userID)
+}
+
+func (s *Service) GetWithdrawals(ctx context.Context, userID int) ([]models.WithdrawalsResp, error) {
+	return s.repository.GetWithdrawals(ctx, userID)
 }
