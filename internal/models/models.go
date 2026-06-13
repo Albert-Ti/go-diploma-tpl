@@ -14,14 +14,14 @@ type WithdrawRequest struct {
 	Sum   float64 `json:"sum"`
 }
 
-type GetOrdersResp struct {
+type OrdersResp struct {
 	Number     string      `json:"number"`
 	Status     OrderStatus `json:"status"`
 	Accrual    float64     `json:"accrual,omitempty"`
 	UploadedAt time.Time   `json:"uploaded_at"`
 }
 
-type GetBalanceResp struct {
+type BalanceResp struct {
 	Current  float64 `json:"current"`
 	Withdraw int     `json:"withdrawn"`
 }

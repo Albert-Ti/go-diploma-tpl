@@ -70,10 +70,10 @@ func (mr *MockRepositoryMockRecorder) CreateOrder(ctx, order, userID any) *gomoc
 }
 
 // GetBalance mocks base method.
-func (m *MockRepository) GetBalance(ctx context.Context, userID int) (models.GetBalanceResp, error) {
+func (m *MockRepository) GetBalance(ctx context.Context, userID int) (models.BalanceResp, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBalance", ctx, userID)
-	ret0, _ := ret[0].(models.GetBalanceResp)
+	ret0, _ := ret[0].(models.BalanceResp)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -100,10 +100,10 @@ func (mr *MockRepositoryMockRecorder) GetOrderUserID(ctx, order any) *gomock.Cal
 }
 
 // GetOrders mocks base method.
-func (m *MockRepository) GetOrders(ctx context.Context, userID int) ([]models.GetOrdersResp, error) {
+func (m *MockRepository) GetOrders(ctx context.Context, userID int) ([]models.OrdersResp, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOrders", ctx, userID)
-	ret0, _ := ret[0].([]models.GetOrdersResp)
+	ret0, _ := ret[0].([]models.OrdersResp)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

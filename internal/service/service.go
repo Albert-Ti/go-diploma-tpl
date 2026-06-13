@@ -164,11 +164,11 @@ func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) 
 	}
 }
 
-func (s *Service) GetOrders(ctx context.Context, userID int) ([]models.GetOrdersResp, error) {
+func (s *Service) GetOrders(ctx context.Context, userID int) ([]models.OrdersResp, error) {
 	return s.repository.GetOrders(ctx, userID)
 }
 
-func (s *Service) GetBalance(ctx context.Context, userID int) (models.GetBalanceResp, error) {
+func (s *Service) GetBalance(ctx context.Context, userID int) (models.BalanceResp, error) {
 	return s.repository.GetBalance(ctx, userID)
 }
 

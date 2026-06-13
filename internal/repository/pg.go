@@ -85,23 +85,23 @@ func (pg *PgStorage) CreateOrder(ctx context.Context, order string, userID int) 
 	return nil
 }
 
-func (pg *PgStorage) GetOrders(ctx context.Context, userID int) ([]models.GetOrdersResp, error) {
+func (pg *PgStorage) GetOrders(ctx context.Context, userID int) ([]models.OrdersResp, error) {
 	sql := `
 		SELECT number, status, accrual, uploaded_at FROM orders
 		WHERE user_id = $1
 	`
 	rows, err := pg.pool.Query(ctx, sql, userID)
 	if err != nil {
-		return []models.GetOrdersResp{}, err
+		return []models.OrdersResp{}, err
 	}
 
-	results := []models.GetOrdersResp{}
+	results := []models.OrdersResp{}
 
 	for rows.Next() {
-		var m models.GetOrdersResp
+		var m models.OrdersResp
 		err := rows.Scan(&m.Number, &m.Status, &m.Accrual, &m.UploadedAt)
 		if err != nil {
-			return []models.GetOrdersResp{}, err
+			return []models.OrdersResp{}, err
 		}
 
 		results = append(results, m)
@@ -156,12 +156,12 @@ func (pg *PgStorage) ProcessedOrderTx(ctx context.Context, order string, status 
 	return tx.Commit(ctx)
 }
 
-func (pg *PgStorage) GetBalance(ctx context.Context, userID int) (models.GetBalanceResp, error) {
+func (pg *PgStorage) GetBalance(ctx context.Context, userID int) (models.BalanceResp, error) {
 	sql := `SELECT current, withdrawn FROM user_balance WHERE user_id = $1`
 
-	var m models.GetBalanceResp
+	var m models.BalanceResp
 	if err := pg.pool.QueryRow(ctx, sql, userID).Scan(&m.Current, &m.Withdraw); err != nil {
-		return models.GetBalanceResp{}, err
+		return models.BalanceResp{}, err
 	}
 
 	return m, nil
