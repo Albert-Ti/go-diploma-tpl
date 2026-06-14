@@ -56,9 +56,8 @@ func (pg *PgStorage) RegisterTx(ctx context.Context, login string, pass string) 
 }
 
 func (pg *PgStorage) GetUser(ctx context.Context, login string) (int, string, error) {
-	sql := `
-		SELECT id, password FROM users WHERE login = $1
-	`
+	sql := `SELECT id, password FROM users WHERE login = $1`
+
 	row := pg.pool.QueryRow(ctx, sql, login)
 
 	var userID int
@@ -133,11 +132,7 @@ func (pg *PgStorage) ProcessedOrderTx(ctx context.Context, order string, status 
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err != nil {
-			tx.Rollback(ctx)
-		}
-	}()
+	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx,
 		`UPDATE orders SET status = $1, accrual = $2 WHERE number = $3`,
