@@ -5,12 +5,14 @@ import (
 	"os"
 )
 
-var Envs struct {
+type Config struct {
 	RunAddr           string
 	DatabaseURI       string
 	JWTSecretKey      string
 	AccrualSystemAddr string
 }
+
+var Envs Config
 
 func ParseFlag() {
 	flag.StringVar(&Envs.RunAddr, "a", "localhost:8080", "address and port to run server")

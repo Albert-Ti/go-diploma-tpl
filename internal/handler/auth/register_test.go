@@ -26,14 +26,14 @@ func TestRegister(t *testing.T) {
 	tests := []struct {
 		name           string
 		contentType    string
-		body           models.AuthRequest
+		requestBody    models.AuthRequest
 		expectedStatus int
 		setupMock      func(mock *mocks.MockRepository)
 	}{
 		{
-			name:           "Case_1_Success",
+			name:           "Success",
 			contentType:    "application/json",
-			body:           models.AuthRequest{Login: "test", Password: "pass"},
+			requestBody:    models.AuthRequest{Login: "test", Password: "pass"},
 			expectedStatus: http.StatusOK,
 			setupMock: func(mock *mocks.MockRepository) {
 				mock.EXPECT().RegisterTx(gomock.Any(), "test", gomock.Any()).
@@ -41,15 +41,15 @@ func TestRegister(t *testing.T) {
 			},
 		},
 		{
-			name:           "Case_2_Bad_Request",
+			name:           "Bad_Request",
 			contentType:    "text",
-			body:           models.AuthRequest{Login: "test", Password: "pass"},
+			requestBody:    models.AuthRequest{Login: "test", Password: "pass"},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "Case_3_Conflict",
+			name:           "Conflict",
 			contentType:    "application/json",
-			body:           models.AuthRequest{Login: "test", Password: "pass"},
+			requestBody:    models.AuthRequest{Login: "test", Password: "pass"},
 			expectedStatus: http.StatusConflict,
 			setupMock: func(mock *mocks.MockRepository) {
 				mock.EXPECT().
@@ -64,7 +64,7 @@ func TestRegister(t *testing.T) {
 				tt.setupMock(mockRepo)
 			}
 
-			body, _ := json.Marshal(tt.body)
+			body, _ := json.Marshal(tt.requestBody)
 			req := httptest.NewRequest(http.MethodPost, "/api/user/register", bytes.NewReader(body))
 			req.Header.Set("Content-Type", tt.contentType)
 			rr := httptest.NewRecorder()

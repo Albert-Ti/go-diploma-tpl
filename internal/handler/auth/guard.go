@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -69,15 +70,16 @@ func Guard(next http.HandlerFunc) http.HandlerFunc {
 		next.ServeHTTP(w, r)
 	}
 }
-
 func GetAuthUserID(ctx context.Context) (int, error) {
 	userID, ok := ctx.Value(UserIDKey).(string)
 	if !ok || userID == "" {
-		return 0, errors.New("User ID not found")
+		return 0, errors.New("user not authenticated")
 	}
+
 	id, err := strconv.Atoi(userID)
 	if err != nil {
-		return 0, errors.New("User ID not found")
+		return 0, fmt.Errorf("invalid user ID format: %s", userID)
 	}
+
 	return id, nil
 }

@@ -12,9 +12,6 @@ run-accrual:
 ping:
 	curl http://localhost:8080/ping -i
 
-test:
-	go test ./... -v
-
 migrate-create:
 	@test -n "$(name)" || (echo "Error: name is required. Use: make migrate-create name=my_migration" && exit 1)
 	migrate create -ext sql -dir "$(MIGRATIONS_PATH)" -seq "$(name)"
@@ -56,3 +53,15 @@ docker-volume-rm:
 
 mockgen:
 	mockgen -source=internal/repository/repository.go -destination=internal/repository/mocks/mock_repository.go -package=mocks 
+
+test:
+	go test ./... -v
+
+test-coverprofile:
+	go test ./... -coverprofile=coverage.out
+
+test-tool:
+	go tool cover -html=coverage.out
+
+test-total:
+	go tool cover -func=coverage.out | grep total

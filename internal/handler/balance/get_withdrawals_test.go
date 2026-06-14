@@ -1,4 +1,4 @@
-package orders_test
+package balance_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/auth"
-	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/orders"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/balance"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/repository/mocks"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
@@ -19,22 +19,23 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestGetOrders(t *testing.T) {
+func TestGetWithdrawals(t *testing.T) {
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockRepository(ctrl)
 	svc := service.NewService(mockRepo)
-	handler := orders.GetOrders(svc)
+	handler := balance.GetWithdrawals(svc)
 
 	now := time.Now()
 
-	var results []models.OrdersResp
+	var results []models.WithdrawalsResp
 
-	results = append(results, models.OrdersResp{
-		Number:     "9278923470",
-		Status:     models.StatusNew,
-		UploadedAt: now,
+	results = append(results, models.WithdrawalsResp{
+		Order:       "9278923470",
+		Sum:         751,
+		ProcessedAt: now,
 	})
 
 	JSONResults, _ := json.Marshal(results)
@@ -42,31 +43,28 @@ func TestGetOrders(t *testing.T) {
 	tests := []struct {
 		name           string
 		contentType    string
-		expectedStatus int
 		responseBody   []byte
+		expectedStatus int
 		setupMock      func(mock *mocks.MockRepository)
 	}{
 		{
 			name:           "Success",
+			contentType:    "application/json",
 			expectedStatus: http.StatusOK,
 			responseBody:   JSONResults,
 			setupMock: func(mock *mocks.MockRepository) {
-				mock.EXPECT().
-					GetOrders(gomock.Any(), 1).
+				mock.EXPECT().GetWithdrawals(gomock.Any(), 1).
 					Return(results, nil)
 			},
 		},
 		{
 			name:           "No_Content",
 			expectedStatus: http.StatusNoContent,
-			responseBody:   nil,
 			setupMock: func(mock *mocks.MockRepository) {
-				mock.EXPECT().
-					GetOrders(gomock.Any(), 1).
-					Return(nil, nil)
+				mock.EXPECT().GetWithdrawals(gomock.Any(), 1).
+					Return([]models.WithdrawalsResp{}, nil)
 			},
 		},
-
 		{
 			name:           "Unauthorized",
 			expectedStatus: http.StatusUnauthorized,
@@ -82,12 +80,14 @@ func TestGetOrders(t *testing.T) {
 
 			var req *http.Request
 			if tt.expectedStatus == http.StatusUnauthorized {
-				req = httptest.NewRequest(http.MethodPost, "/api/user/orders", nil)
+				req = httptest.NewRequest(http.MethodPost, "/api/user/balance", nil)
 			} else {
 				req = httptest.NewRequestWithContext(
 					context.WithValue(context.Background(), auth.UserIDKey, "1"),
-					http.MethodGet, "/api/user/orders", nil)
+					http.MethodGet, "/api/user/balance", nil)
 			}
+
+			req.Header.Set("Content-Type", tt.contentType)
 
 			rr := httptest.NewRecorder()
 
@@ -97,7 +97,9 @@ func TestGetOrders(t *testing.T) {
 				body, _ := io.ReadAll(rr.Body)
 				assert.JSONEq(t, string(tt.responseBody), string(body))
 			}
+
 			require.Equal(t, tt.expectedStatus, rr.Code)
 		})
 	}
+
 }

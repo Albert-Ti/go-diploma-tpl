@@ -32,5 +32,7 @@ func GetWithdrawals(svc *service.Service) http.HandlerFunc {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }

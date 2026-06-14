@@ -1,4 +1,4 @@
-package orders_test
+package balance_test
 
 import (
 	"context"
@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/auth"
-	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/orders"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/balance"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/repository/mocks"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
@@ -19,54 +18,38 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestGetOrders(t *testing.T) {
+func TestGetBalance(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockRepository(ctrl)
 	svc := service.NewService(mockRepo)
-	handler := orders.GetOrders(svc)
+	handler := balance.GetBalance(svc)
 
-	now := time.Now()
+	result := models.BalanceResp{
+		Current:  1000,
+		Withdraw: 0,
+	}
 
-	var results []models.OrdersResp
-
-	results = append(results, models.OrdersResp{
-		Number:     "9278923470",
-		Status:     models.StatusNew,
-		UploadedAt: now,
-	})
-
-	JSONResults, _ := json.Marshal(results)
+	JSONResult, _ := json.Marshal(result)
 
 	tests := []struct {
 		name           string
 		contentType    string
-		expectedStatus int
 		responseBody   []byte
+		expectedStatus int
 		setupMock      func(mock *mocks.MockRepository)
 	}{
 		{
 			name:           "Success",
+			contentType:    "application/json",
 			expectedStatus: http.StatusOK,
-			responseBody:   JSONResults,
+			responseBody:   JSONResult,
 			setupMock: func(mock *mocks.MockRepository) {
-				mock.EXPECT().
-					GetOrders(gomock.Any(), 1).
-					Return(results, nil)
+				mock.EXPECT().GetBalance(gomock.Any(), 1).
+					Return(result, nil)
 			},
 		},
-		{
-			name:           "No_Content",
-			expectedStatus: http.StatusNoContent,
-			responseBody:   nil,
-			setupMock: func(mock *mocks.MockRepository) {
-				mock.EXPECT().
-					GetOrders(gomock.Any(), 1).
-					Return(nil, nil)
-			},
-		},
-
 		{
 			name:           "Unauthorized",
 			expectedStatus: http.StatusUnauthorized,
@@ -82,12 +65,14 @@ func TestGetOrders(t *testing.T) {
 
 			var req *http.Request
 			if tt.expectedStatus == http.StatusUnauthorized {
-				req = httptest.NewRequest(http.MethodPost, "/api/user/orders", nil)
+				req = httptest.NewRequest(http.MethodPost, "/api/user/balance", nil)
 			} else {
 				req = httptest.NewRequestWithContext(
 					context.WithValue(context.Background(), auth.UserIDKey, "1"),
-					http.MethodGet, "/api/user/orders", nil)
+					http.MethodGet, "/api/user/balance", nil)
 			}
+
+			req.Header.Set("Content-Type", tt.contentType)
 
 			rr := httptest.NewRecorder()
 
@@ -97,6 +82,7 @@ func TestGetOrders(t *testing.T) {
 				body, _ := io.ReadAll(rr.Body)
 				assert.JSONEq(t, string(tt.responseBody), string(body))
 			}
+
 			require.Equal(t, tt.expectedStatus, rr.Code)
 		})
 	}
