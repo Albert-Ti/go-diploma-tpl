@@ -70,18 +70,29 @@ func (pg *PgStorage) GetUser(ctx context.Context, login string) (int, string, er
 	return userID, password, nil
 }
 
-func (pg *PgStorage) CreateOrder(ctx context.Context, order string, userID int) error {
+func (pg *PgStorage) CreateOrder(ctx context.Context, order string, userID int) (int, error) {
 	sql := `
-		INSERT INTO orders (number, status, user_id)
-		VALUES ($1, $2, $3)
-	`
+        INSERT INTO orders (number, status, user_id)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (number) DO UPDATE 
+        SET number = EXCLUDED.number
+        RETURNING user_id, (xmax = 0) AS is_inserted;
+    `
 
-	_, err := pg.pool.Exec(ctx, sql, order, models.StatusNew, userID)
+	var existingUserID int
+	var isNew bool
+
+	err := pg.pool.QueryRow(ctx, sql, order, models.StatusNew, userID).
+		Scan(&existingUserID, &isNew)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	if isNew {
+		return 0, nil
+	}
+
+	return existingUserID, err
 }
 
 func (pg *PgStorage) GetOrders(ctx context.Context, userID int) ([]models.OrdersResp, error) {
@@ -110,13 +121,6 @@ func (pg *PgStorage) GetOrders(ctx context.Context, userID int) ([]models.Orders
 		return nil, err
 	}
 	return results, nil
-}
-
-func (pg *PgStorage) GetOrderUserID(ctx context.Context, order string) (int, error) {
-	sql := `SELECT user_id FROM orders WHERE number = $1`
-	var userID int
-	err := pg.pool.QueryRow(ctx, sql, order).Scan(&userID)
-	return userID, err
 }
 
 func (pg *PgStorage) UpdateStatusOrder(ctx context.Context, order string, status models.OrderStatus) error {

@@ -14,9 +14,8 @@ import (
 type Repository interface {
 	RegisterTx(ctx context.Context, login string, pass string) (int, error)
 	GetUser(ctx context.Context, login string) (int, string, error)
-	CreateOrder(ctx context.Context, order string, userID int) error
+	CreateOrder(ctx context.Context, order string, userID int) (int, error)
 	GetOrders(ctx context.Context, userID int) ([]models.OrdersResp, error)
-	GetOrderUserID(ctx context.Context, order string) (int, error)
 	GetBalance(ctx context.Context, userID int) (models.BalanceResp, error)
 	UpdateStatusOrder(ctx context.Context, order string, status models.OrderStatus) error
 	ProcessedOrderTx(ctx context.Context, order string, status models.OrderStatus, accrual float64, userID int) error

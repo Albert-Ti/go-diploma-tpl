@@ -56,11 +56,12 @@ func (mr *MockRepositoryMockRecorder) BalanceWithdrawalsTx(ctx, order, sum, user
 }
 
 // CreateOrder mocks base method.
-func (m *MockRepository) CreateOrder(ctx context.Context, order string, userID int) error {
+func (m *MockRepository) CreateOrder(ctx context.Context, order string, userID int) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateOrder", ctx, order, userID)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateOrder indicates an expected call of CreateOrder.
@@ -82,21 +83,6 @@ func (m *MockRepository) GetBalance(ctx context.Context, userID int) (models.Bal
 func (mr *MockRepositoryMockRecorder) GetBalance(ctx, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalance", reflect.TypeOf((*MockRepository)(nil).GetBalance), ctx, userID)
-}
-
-// GetOrderUserID mocks base method.
-func (m *MockRepository) GetOrderUserID(ctx context.Context, order string) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrderUserID", ctx, order)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOrderUserID indicates an expected call of GetOrderUserID.
-func (mr *MockRepositoryMockRecorder) GetOrderUserID(ctx, order any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderUserID", reflect.TypeOf((*MockRepository)(nil).GetOrderUserID), ctx, order)
 }
 
 // GetOrders mocks base method.

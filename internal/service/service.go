@@ -70,25 +70,20 @@ func (s *Service) Login(ctx context.Context, login string, pass string) (int, er
 }
 
 func (s *Service) AddOrder(ctx context.Context, order string, userID int) error {
-	err := s.repository.CreateOrder(ctx, order, userID)
-
-	classifier := repository.NewPostgresErrorClassifier()
-	classification := classifier.Classify(err)
-
+	existingUserID, err := s.repository.CreateOrder(ctx, order, userID)
 	if err != nil {
-		if classification == repository.NonRetriable {
-			existingUserID, getErr := s.repository.GetOrderUserID(ctx, order)
-			if getErr != nil {
-				return fmt.Errorf("Failed to check existing order: %w", getErr)
-			}
-
-			if existingUserID == userID {
-				return ErrOrderAlreadyExistsForUser
-			}
-			return ErrOrderAlreadyExistsForOther
-		}
+		return err
 	}
-	return nil
+
+	if existingUserID == 0 {
+		return nil
+	}
+
+	if existingUserID == userID {
+		return ErrOrderAlreadyExistsForUser
+	}
+
+	return ErrOrderAlreadyExistsForOther
 }
 
 func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) error {

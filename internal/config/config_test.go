@@ -18,7 +18,7 @@ func TestParseFlag(t *testing.T) {
 		want config.Config
 	}{
 		{
-			name: "Add_env",
+			name: "Add_ENV",
 			args: []string{"test"},
 			env: map[string]string{
 				"RUN_ADDRESS":            "localhost:8888",

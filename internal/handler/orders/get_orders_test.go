@@ -45,11 +45,13 @@ func TestGetOrders(t *testing.T) {
 		expectedStatus int
 		responseBody   []byte
 		setupMock      func(mock *mocks.MockRepository)
+		ctx            context.Context
 	}{
 		{
 			name:           "Success",
 			expectedStatus: http.StatusOK,
 			responseBody:   JSONResults,
+			ctx:            context.WithValue(context.Background(), auth.UserIDKey, "1"),
 			setupMock: func(mock *mocks.MockRepository) {
 				mock.EXPECT().
 					GetOrders(gomock.Any(), 1).
@@ -60,16 +62,18 @@ func TestGetOrders(t *testing.T) {
 			name:           "No_Content",
 			expectedStatus: http.StatusNoContent,
 			responseBody:   nil,
+			ctx:            context.WithValue(context.Background(), auth.UserIDKey, "1"),
 			setupMock: func(mock *mocks.MockRepository) {
 				mock.EXPECT().
 					GetOrders(gomock.Any(), 1).
-					Return(nil, nil)
+					Return([]models.OrdersResp{}, nil)
 			},
 		},
 
 		{
 			name:           "Unauthorized",
 			expectedStatus: http.StatusUnauthorized,
+			ctx:            context.Background(),
 			setupMock:      nil,
 		},
 	}
@@ -80,14 +84,8 @@ func TestGetOrders(t *testing.T) {
 				tt.setupMock(mockRepo)
 			}
 
-			var req *http.Request
-			if tt.expectedStatus == http.StatusUnauthorized {
-				req = httptest.NewRequest(http.MethodPost, "/api/user/orders", nil)
-			} else {
-				req = httptest.NewRequestWithContext(
-					context.WithValue(context.Background(), auth.UserIDKey, "1"),
-					http.MethodGet, "/api/user/orders", nil)
-			}
+			req := httptest.NewRequestWithContext(tt.ctx, http.MethodGet,
+				"/api/user/orders", nil)
 
 			rr := httptest.NewRecorder()
 

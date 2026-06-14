@@ -36,7 +36,8 @@ func TestRegister(t *testing.T) {
 			requestBody:    models.AuthRequest{Login: "test", Password: "pass"},
 			expectedStatus: http.StatusOK,
 			setupMock: func(mock *mocks.MockRepository) {
-				mock.EXPECT().RegisterTx(gomock.Any(), "test", gomock.Any()).
+				mock.EXPECT().
+					RegisterTx(gomock.Any(), "test", gomock.Any()).
 					Return(1, nil)
 			},
 		},

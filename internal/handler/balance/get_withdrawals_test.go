@@ -45,6 +45,7 @@ func TestGetWithdrawals(t *testing.T) {
 		contentType    string
 		responseBody   []byte
 		expectedStatus int
+		ctx            context.Context
 		setupMock      func(mock *mocks.MockRepository)
 	}{
 		{
@@ -52,6 +53,7 @@ func TestGetWithdrawals(t *testing.T) {
 			contentType:    "application/json",
 			expectedStatus: http.StatusOK,
 			responseBody:   JSONResults,
+			ctx:            context.WithValue(context.Background(), auth.UserIDKey, "1"),
 			setupMock: func(mock *mocks.MockRepository) {
 				mock.EXPECT().GetWithdrawals(gomock.Any(), 1).
 					Return(results, nil)
@@ -60,6 +62,7 @@ func TestGetWithdrawals(t *testing.T) {
 		{
 			name:           "No_Content",
 			expectedStatus: http.StatusNoContent,
+			ctx:            context.WithValue(context.Background(), auth.UserIDKey, "1"),
 			setupMock: func(mock *mocks.MockRepository) {
 				mock.EXPECT().GetWithdrawals(gomock.Any(), 1).
 					Return([]models.WithdrawalsResp{}, nil)
@@ -68,6 +71,7 @@ func TestGetWithdrawals(t *testing.T) {
 		{
 			name:           "Unauthorized",
 			expectedStatus: http.StatusUnauthorized,
+			ctx:            context.Background(),
 			setupMock:      nil,
 		},
 	}
@@ -78,14 +82,8 @@ func TestGetWithdrawals(t *testing.T) {
 				tt.setupMock(mockRepo)
 			}
 
-			var req *http.Request
-			if tt.expectedStatus == http.StatusUnauthorized {
-				req = httptest.NewRequest(http.MethodPost, "/api/user/balance", nil)
-			} else {
-				req = httptest.NewRequestWithContext(
-					context.WithValue(context.Background(), auth.UserIDKey, "1"),
-					http.MethodGet, "/api/user/balance", nil)
-			}
+			req := httptest.NewRequestWithContext(tt.ctx, http.MethodGet,
+				"/api/user/balance", nil)
 
 			req.Header.Set("Content-Type", tt.contentType)
 

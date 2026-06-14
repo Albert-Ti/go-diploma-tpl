@@ -38,6 +38,7 @@ func TestGetBalance(t *testing.T) {
 		contentType    string
 		responseBody   []byte
 		expectedStatus int
+		ctx            context.Context
 		setupMock      func(mock *mocks.MockRepository)
 	}{
 		{
@@ -45,6 +46,7 @@ func TestGetBalance(t *testing.T) {
 			contentType:    "application/json",
 			expectedStatus: http.StatusOK,
 			responseBody:   JSONResult,
+			ctx:            context.WithValue(context.Background(), auth.UserIDKey, "1"),
 			setupMock: func(mock *mocks.MockRepository) {
 				mock.EXPECT().GetBalance(gomock.Any(), 1).
 					Return(result, nil)
@@ -53,6 +55,7 @@ func TestGetBalance(t *testing.T) {
 		{
 			name:           "Unauthorized",
 			expectedStatus: http.StatusUnauthorized,
+			ctx:            context.Background(),
 			setupMock:      nil,
 		},
 	}
@@ -63,14 +66,8 @@ func TestGetBalance(t *testing.T) {
 				tt.setupMock(mockRepo)
 			}
 
-			var req *http.Request
-			if tt.expectedStatus == http.StatusUnauthorized {
-				req = httptest.NewRequest(http.MethodPost, "/api/user/balance", nil)
-			} else {
-				req = httptest.NewRequestWithContext(
-					context.WithValue(context.Background(), auth.UserIDKey, "1"),
-					http.MethodGet, "/api/user/balance", nil)
-			}
+			req := httptest.NewRequestWithContext(tt.ctx, http.MethodGet,
+				"/api/user/balance", nil)
 
 			req.Header.Set("Content-Type", tt.contentType)
 
