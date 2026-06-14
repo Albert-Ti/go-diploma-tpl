@@ -44,7 +44,7 @@ func (pg *PgStorage) RegisterTx(ctx context.Context, login string, pass string) 
 	_, errBalance := tx.Exec(ctx,
 		`INSERT INTO user_balance (user_id) VALUES ($1)`,
 		userID)
-	if errUser != nil {
+	if errBalance != nil {
 		return 0, errBalance
 	}
 
