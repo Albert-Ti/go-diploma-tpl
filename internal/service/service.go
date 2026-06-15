@@ -25,6 +25,10 @@ var (
 	ErrOrderAlreadyExistsForOther = errors.New("Order already exists for other user")
 )
 
+type AccrualChecker interface {
+	CheckAccrualOrder(ctx context.Context, task models.TaskOrder) error
+}
+
 type Service struct {
 	repository repository.Repository
 }

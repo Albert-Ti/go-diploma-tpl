@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
@@ -11,20 +12,25 @@ import (
 )
 
 type WorkerPool struct {
-	svc       *service.Service
+	svc       service.AccrualChecker
 	workers   int
 	queueSize int
 	tasks     chan models.TaskOrder
 	done      chan struct{}
 	wg        sync.WaitGroup
+	active    atomic.Int32
+	dropped   atomic.Int32
 }
 
-func NewWorkerPool(svc *service.Service, numWorkers int, queueSize int) *WorkerPool {
+func NewWorkerPool(svc service.AccrualChecker, numWorkers int, queueSize int) *WorkerPool {
 	wp := &WorkerPool{
 		workers:   numWorkers,
 		queueSize: queueSize,
 		tasks:     make(chan models.TaskOrder, queueSize),
+		done:      make(chan struct{}),
 		svc:       svc,
+		active:    atomic.Int32{},
+		dropped:   atomic.Int32{},
 	}
 
 	go func() {
@@ -39,6 +45,9 @@ func NewWorkerPool(svc *service.Service, numWorkers int, queueSize int) *WorkerP
 
 func (wp *WorkerPool) worker(id int) {
 	defer wp.wg.Done()
+	// atomic(атомарно) чтение + инкремент + запись происходят за один такт
+	wp.active.Add(1)
+	defer wp.active.Add(-1)
 
 	for {
 		select {
@@ -67,6 +76,7 @@ func (wp *WorkerPool) AddTask(orderID string, userID int) {
 	case wp.tasks <- task:
 		slog.Info("Added", "task", task.OrderID)
 	default:
+		wp.dropped.Add(1)
 		slog.Info("Queue is full, task", task.OrderID, "not added")
 	}
 }

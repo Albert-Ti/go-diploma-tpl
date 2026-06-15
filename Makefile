@@ -58,7 +58,7 @@ test:
 	go test ./... -v
 
 test-coverprofile:
-	go test ./... -coverprofile=coverage.out
+	go test ./internal/handler/... -coverprofile=coverage.out
 
 test-tool:
 	go tool cover -html=coverage.out
