@@ -91,15 +91,16 @@ func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) 
 		return err
 	}
 
-	urlAccrual := url.URL{
-		Scheme: "http",
-		Host:   config.Envs.AccrualSystemAddr,
-		Path:   "api/orders/" + task.OrderID,
+	accrualURL, err := url.Parse(config.Envs.AccrualSystemAddr)
+	if err != nil {
+		return err
 	}
+
+	accrualURL.Path = "api/orders/" + task.OrderID
 
 	for {
 		slog.Info("Iteration", "task", task.OrderID)
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlAccrual.String(), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, accrualURL.String(), nil)
 		if err != nil {
 			return err
 		}
