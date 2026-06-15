@@ -2,6 +2,7 @@ package balance
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/auth"
@@ -18,6 +19,7 @@ func GetBalance(svc *service.Service) http.HandlerFunc {
 
 		balance, err := svc.GetBalance(r.Context(), userID)
 		if err != nil {
+			slog.Error("GetBalance", "ERROR", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
