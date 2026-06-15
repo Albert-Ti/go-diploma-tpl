@@ -23,7 +23,7 @@ type OrdersResp struct {
 
 type BalanceResp struct {
 	Current  float64 `json:"current"`
-	Withdraw int     `json:"withdrawn"`
+	Withdraw float64 `json:"withdrawn"`
 }
 
 type AccrualResp struct {
