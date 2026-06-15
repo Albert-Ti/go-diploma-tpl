@@ -70,6 +70,7 @@ func Guard(next http.HandlerFunc) http.HandlerFunc {
 		next.ServeHTTP(w, r)
 	}
 }
+
 func GetAuthUserID(ctx context.Context) (int, error) {
 	userID, ok := ctx.Value(UserIDKey).(string)
 	if !ok || userID == "" {
