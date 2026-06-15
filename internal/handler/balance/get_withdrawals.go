@@ -22,17 +22,16 @@ func GetWithdrawals(svc *service.Service) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
+
 		if len(withdrawals) == 0 {
-			http.Error(w, "No Content", http.StatusNoContent)
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(withdrawals); err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
-
-		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -22,15 +22,15 @@ func GetOrders(svc *service.Service) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Add("Content-Type", "application/json")
+
 		if len(orders) == 0 {
-			http.Error(w, "No Content", http.StatusNoContent)
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		w.Header().Add("Content-Type", "application/json")
-
 		if err := json.NewEncoder(w).Encode(orders); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 	}
