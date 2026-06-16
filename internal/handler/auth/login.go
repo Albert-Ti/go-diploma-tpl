@@ -11,6 +11,21 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 )
 
+// Login godoc
+//
+//	@Summary		Авторизация пользователя
+//	@Description	Авторизует пользователя и устанавливает JWT cookie
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		models.AuthRequest	true	"Данные пользователя"
+//
+//	@Success		200		"Пользователь успешно зарегистрирован"
+//	@Failure		400		"Некорректный запрос"
+//	@Failure		401		"Неправильный логин или пароль"
+//	@Failure		500		"Внутренняя ошибка сервера"
+//
+//	@Router			/api/user/login [post]
 func Login(svc *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Content-type"), "application/json") {

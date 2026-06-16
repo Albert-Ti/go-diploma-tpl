@@ -8,6 +8,20 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 )
 
+// GetOrders godoc
+//
+//	@Summary		 Мои заказы
+//	@Description	Получение списка загруженных номеров заказов
+//	@Tags				orders
+//	@Produce		json
+//
+//	@Security		CookieAuth
+//	@Success		200		"Успешная обработка запроса"
+//	@Failure		204		"Нет данных для ответа"
+//	@Failure		401		"Пользователь не аутентифицирован"
+//	@Failure		500		"Внутренняя ошибка сервера"
+//
+//	@Router			/api/user/orders [get]
 func GetOrders(svc *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.GetAuthUserID(r.Context())

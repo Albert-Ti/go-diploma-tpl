@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	_ "github.com/Albert-Ti/go-diploma-tpl/docs"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/config"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/auth"
 	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/balance"
@@ -13,8 +14,14 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 	chiMiddleware "github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// @title Gophermart API
+// @version 1.0
+// @description Сервис лояльности Gophermart
+// @host localhost:8080
+// @BasePath /
 func main() {
 	config.ParseFlag()
 
@@ -43,6 +50,8 @@ func main() {
 	r.Post("/api/user/balance/withdraw", auth.Guard(balance.BalanceWithdraw(svc)))
 	r.Get("/api/user/balance", auth.Guard(balance.GetBalance(svc)))
 	r.Get("/api/user/withdrawals", auth.Guard(balance.GetWithdrawals(svc)))
+
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	slog.Info("Running server", "host", config.Envs.RunAddr)
 

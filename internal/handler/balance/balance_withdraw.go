@@ -10,6 +10,23 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/utils"
 )
 
+// BalanceWithdraw godoc
+//
+//	@Summary		Запрос на списание средств
+//	@Description	Запрос на списание средств
+//	@Tags			balance
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		models.WithdrawRequest	true	"Формат запроса"
+//
+//	@Security		CookieAuth
+//	@Success		200		"Успешная обработка запроса"
+//	@Failure		401		"Пользователь не аутентифицирован"
+//	@Failure		402		"На счету недостаточно средств"
+//	@Failure		422		"Неверный номер заказа"
+//	@Failure		500		"Внутренняя ошибка сервера"
+//
+//	@Router			/api/user/balance/withdraw [post]
 func BalanceWithdraw(svc *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var m models.WithdrawRequest

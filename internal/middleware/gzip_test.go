@@ -3,7 +3,6 @@ package middleware_test
 import (
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,12 +19,6 @@ func TestGzipCompress(t *testing.T) {
 	successBody := "Zag! Zag!"
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
-
-		fmt.Println(string(body))
-		fmt.Println(r.Header.Get("Content-Encoding"))
-		fmt.Println(r.Header.Get("Accept-Encoding"))
-
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(successBody))
 	})
@@ -52,7 +45,6 @@ func TestGzipCompress(t *testing.T) {
 		require.NoError(t, err)
 
 		body, err := io.ReadAll(zr)
-		require.NoError(t, err)
 
 		assert.Equal(t, successBody, string(body))
 	})

@@ -11,6 +11,21 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 )
 
+// Register godoc
+//
+//	@Summary		Регистрация пользователя
+//	@Description	Создает нового пользователя и устанавливает JWT cookie
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		models.AuthRequest	true	"Данные пользователя"
+//
+//	@Success		200		"Пользователь успешно зарегистрирован"
+//	@Failure		400		"Некорректный запрос"
+//	@Failure		409		"Логин уже существует"
+//	@Failure		500		"Внутренняя ошибка сервера"
+//
+//	@Router			/api/user/register [post]
 func Register(svc *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Content-type"), "application/json") {

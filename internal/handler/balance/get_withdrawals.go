@@ -8,6 +8,20 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 )
 
+// GetWithdrawals godoc
+//
+//	@Summary		 Мои заказы
+//	@Description	Получение списка загруженных номеров заказов
+//	@Tags				balance
+//	@Produce		json
+//
+//	@Security		CookieAuth
+//	@Success		200		"Успешная обработка запроса"
+//	@Failure		204		"Hет ни одного списания"
+//	@Failure		401		"Пользователь не аутентифицирован"
+//	@Failure		500		"Внутренняя ошибка сервера"
+//
+//	@Router			/api/user/withdrawals [get]
 func GetWithdrawals(svc *service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.GetAuthUserID(r.Context())

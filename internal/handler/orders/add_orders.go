@@ -10,6 +10,24 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/utils"
 )
 
+// AddOrders godoc
+//
+//	@Summary		 Создать заказ
+//	@Description	Создание заказа а так же проверка в системе лояльности
+//	@Tags				orders
+//	@Accept			text/plain
+//	@Param			request	body string true "Номер заказа" example(9278923470)
+//
+//	@Security		CookieAuth
+//	@Success		200		"Номер заказа уже был загружен этим пользователем"
+//	@Success		202		"Новый номер заказа принят в обработку"
+//	@Failure		400		"Неверный формат запроса"
+//	@Failure		401		"Пользователь не аутентифицирован"
+//	@Failure		409		"Номер заказа уже был загружен другим пользователем"
+//	@Failure		422		"Неверный формат номера заказа"
+//	@Failure		500		"Внутренняя ошибка сервера"
+//
+//	@Router			/api/user/orders [post]
 func AddOrders(svc *service.Service, wp *WorkerPool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

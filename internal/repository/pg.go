@@ -2,15 +2,13 @@ package repository
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PgStorage struct {
-	pool          *pgxpool.Pool
-	pgErrConflict error
+	pool *pgxpool.Pool
 }
 
 func NewPgStorage(dsn string) (*PgStorage, error) {
@@ -20,8 +18,7 @@ func NewPgStorage(dsn string) (*PgStorage, error) {
 	}
 
 	return &PgStorage{
-		pool:          pool,
-		pgErrConflict: errors.New("Order is already exist"),
+		pool: pool,
 	}, nil
 }
 
@@ -38,7 +35,7 @@ func (pg *PgStorage) RegisterTx(ctx context.Context, login string, pass string) 
 		`INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id`,
 		login, pass).Scan(&userID)
 	if errUser != nil {
-		return 0, err
+		return 0, errUser
 	}
 
 	_, errBalance := tx.Exec(ctx,

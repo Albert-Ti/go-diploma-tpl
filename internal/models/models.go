@@ -5,13 +5,13 @@ import (
 )
 
 type AuthRequest struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	Login    string `json:"login" example:"Albert"`
+	Password string `json:"password" example:"12345"`
 }
 
 type WithdrawRequest struct {
-	Order string  `json:"order"`
-	Sum   float64 `json:"sum"`
+	Order string  `json:"order" example:"9278923470"`
+	Sum   float64 `json:"sum" example:"751"`
 }
 
 type OrdersResp struct {

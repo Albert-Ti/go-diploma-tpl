@@ -1,0 +1,309 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Сервис лояльности Gophermart",
+        "title": "Gophermart API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/user/balance": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Получение текущего баланса пользователя",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "balance"
+                ],
+                "summary": "Получение текущего баланса пользователя",
+                "responses": {
+                    "200": {
+                        "description": "успешная обработка запроса"
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/api/user/balance/withdraw": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Запрос на списание средств",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "balance"
+                ],
+                "summary": "Запрос на списание средств",
+                "parameters": [
+                    {
+                        "description": "Формат запроса",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.WithdrawRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешная обработка запроса"
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован"
+                    },
+                    "402": {
+                        "description": "На счету недостаточно средств"
+                    },
+                    "422": {
+                        "description": "Неверный номер заказа"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/api/user/login": {
+            "post": {
+                "description": "Авторизует пользователя и устанавливает JWT cookie",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Авторизация пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AuthRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь успешно зарегистрирован"
+                    },
+                    "400": {
+                        "description": "Некорректный запрос"
+                    },
+                    "401": {
+                        "description": "Неправильный логин или пароль"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/api/user/orders": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Получение списка загруженных номеров заказов",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Мои заказы",
+                "responses": {
+                    "200": {
+                        "description": "Успешная обработка запроса"
+                    },
+                    "204": {
+                        "description": "Нет данных для ответа"
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера"
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Создание заказа а так же проверка в системе лояльности",
+                "consumes": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Создать заказ",
+                "parameters": [
+                    {
+                        "example": "9278923470",
+                        "description": "Номер заказа",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Номер заказа уже был загружен этим пользователем"
+                    },
+                    "202": {
+                        "description": "Новый номер заказа принят в обработку"
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса"
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован"
+                    },
+                    "409": {
+                        "description": "Номер заказа уже был загружен другим пользователем"
+                    },
+                    "422": {
+                        "description": "Неверный формат номера заказа"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/api/user/register": {
+            "post": {
+                "description": "Создает нового пользователя и устанавливает JWT cookie",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Регистрация пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AuthRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь успешно зарегистрирован"
+                    },
+                    "400": {
+                        "description": "Некорректный запрос"
+                    },
+                    "409": {
+                        "description": "Логин уже существует"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/api/user/withdrawals": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Получение списка загруженных номеров заказов",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "balance"
+                ],
+                "summary": "Мои заказы",
+                "responses": {
+                    "200": {
+                        "description": "Успешная обработка запроса"
+                    },
+                    "204": {
+                        "description": "Hет ни одного списания"
+                    },
+                    "401": {
+                        "description": "Пользователь не аутентифицирован"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.AuthRequest": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string",
+                    "example": "Albert"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "12345"
+                }
+            }
+        },
+        "models.WithdrawRequest": {
+            "type": "object",
+            "properties": {
+                "order": {
+                    "type": "string",
+                    "example": "9278923470"
+                },
+                "sum": {
+                    "type": "number",
+                    "example": 751
+                }
+            }
+        }
+    }
+}
