@@ -20,6 +20,10 @@ type WorkerPool struct {
 	wg        sync.WaitGroup
 	active    atomic.Int32
 	dropped   atomic.Int32
+
+	// зашита от дублировании
+	mu        sync.Mutex
+	queueTask map[string]bool
 }
 
 func NewWorkerPool(svc service.AccrualChecker, numWorkers int, queueSize int) *WorkerPool {
@@ -31,6 +35,7 @@ func NewWorkerPool(svc service.AccrualChecker, numWorkers int, queueSize int) *W
 		svc:       svc,
 		active:    atomic.Int32{},
 		dropped:   atomic.Int32{},
+		queueTask: make(map[string]bool),
 	}
 
 	go func() {
@@ -59,6 +64,11 @@ func (wp *WorkerPool) worker(id int) {
 				slog.Error("Worker Pool", "worker", id, "error", err)
 			}
 
+			// Удаляем задачу из мапы после завершения
+			wp.mu.Lock()
+			delete(wp.queueTask, task.OrderID)
+			wp.mu.Unlock()
+
 			slog.Info("Worker Pool", "worker", id, "completed task", task)
 		case <-wp.done:
 			return
@@ -67,12 +77,21 @@ func (wp *WorkerPool) worker(id int) {
 }
 
 func (wp *WorkerPool) AddTask(orderID string, userID int) {
+	wp.mu.Lock()
+
+	if wp.queueTask[orderID] == true {
+		wp.mu.Unlock()
+		slog.Info("Duplicate task ignored", "order", orderID)
+		return
+	}
+	wp.queueTask[orderID] = true
+	wp.mu.Unlock()
+
 	task := models.TaskOrder{
 		OrderID: orderID,
 		UserID:  userID,
 	}
 	select {
-
 	case wp.tasks <- task:
 		slog.Info("Added", "task", task.OrderID)
 	default:
