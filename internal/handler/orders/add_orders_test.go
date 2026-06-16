@@ -22,7 +22,10 @@ func TestAddOrders(t *testing.T) {
 	mockRepo := mocks.NewMockRepository(ctrl)
 	svc := service.NewService(mockRepo)
 
-	handler := orders.AddOrders(svc, &orders.WorkerPool{})
+	wp := orders.NewWorkerPool(svc, 0, 10)
+	defer wp.Stop()
+
+	handler := orders.AddOrders(svc, wp)
 
 	tests := []struct {
 		name           string
