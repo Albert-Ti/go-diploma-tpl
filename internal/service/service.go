@@ -23,6 +23,7 @@ var (
 	ErrUnauthorized               = errors.New("Invalid password")
 	ErrOrderAlreadyExistsForUser  = errors.New("Order already exists for this user")
 	ErrOrderAlreadyExistsForOther = errors.New("Order already exists for other user")
+	ErrInsufficientFunds          = errors.New("insufficient funds")
 )
 
 var accrualClient = &http.Client{
@@ -194,7 +195,16 @@ func (s *Service) GetBalance(ctx context.Context, userID int) (models.BalanceRes
 }
 
 func (s *Service) BalanceWithdrawals(ctx context.Context, order string, sum float64, userID int) error {
-	return s.repository.BalanceWithdrawalsTx(ctx, order, sum, userID)
+	err := s.repository.BalanceWithdrawalsTx(ctx, order, sum, userID)
+
+	if err != nil {
+		if errors.Is(err, repository.ErrInsufficientFunds) {
+			return ErrInsufficientFunds
+		}
+
+		return err
+	}
+	return nil
 }
 
 func (s *Service) GetWithdrawals(ctx context.Context, userID int) ([]models.WithdrawalsResp, error) {

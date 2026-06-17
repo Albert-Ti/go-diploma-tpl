@@ -18,14 +18,18 @@ type WorkerPool struct {
 	tasks     chan models.TaskOrder
 	done      chan struct{}
 	wg        sync.WaitGroup
-	active    atomic.Int32
-	dropped   atomic.Int32
 
-	// зашита от дублировании
+	// для мониторинга
+	active  atomic.Int32
+	dropped atomic.Int32
+
+	// Страховка от дублировании
 	mu        sync.Mutex
 	queueTask map[string]bool
-	ctx       context.Context
-	cancel    context.CancelFunc
+
+	// Страховка от бесконечного цикла
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func NewWorkerPool(svc service.AccrualChecker, numWorkers int, queueSize int) *WorkerPool {

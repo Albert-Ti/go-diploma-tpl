@@ -2,10 +2,14 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrInsufficientFunds = errors.New("insufficient funds")
 
 type PgStorage struct {
 	pool *pgxpool.Pool
@@ -170,6 +174,20 @@ func (pg *PgStorage) BalanceWithdrawalsTx(ctx context.Context, order string, sum
 	}
 
 	defer tx.Rollback(ctx)
+
+	//FOR UPDATE — это инструкция, которая блокирует выбранные строки,
+	// чтобы другие транзакции не могли их изменить, пока текущая транзакция не завершится.
+	var currentBalance float64
+	err = tx.QueryRow(ctx,
+		`SELECT current FROM user_balance WHERE user_id = $1 FOR UPDATE`,
+		userID).Scan(&currentBalance)
+	if err != nil {
+		return err
+	}
+
+	if currentBalance < sum {
+		return fmt.Errorf("%w: current balance %.2f, requested %.2f", ErrInsufficientFunds, currentBalance, sum)
+	}
 
 	_, errBalance := tx.Exec(ctx,
 		`UPDATE user_balance SET current = current - $1, withdrawn = withdrawn + $1 WHERE user_id = $2`,

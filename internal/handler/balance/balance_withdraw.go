@@ -2,6 +2,7 @@ package balance
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/Albert-Ti/go-diploma-tpl/internal/handler/auth"
@@ -46,19 +47,12 @@ func BalanceWithdraw(svc *service.Service) http.HandlerFunc {
 			return
 		}
 
-		balance, err := svc.GetBalance(r.Context(), userID)
-		if err != nil {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-
-		if balance.Current < m.Sum {
-			http.Error(w, "Insufficient funds", http.StatusPaymentRequired)
-			return
-		}
-
 		if err := svc.BalanceWithdrawals(r.Context(), m.Order, m.Sum, userID); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			if errors.Is(err, service.ErrInsufficientFunds) {
+				http.Error(w, err.Error(), http.StatusPaymentRequired)
+				return
+			}
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
