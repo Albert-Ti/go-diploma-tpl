@@ -1,0 +1,197 @@
+basePath: /
+definitions:
+  models.AuthRequest:
+    properties:
+      login:
+        example: Albert
+        type: string
+      password:
+        example: "12345"
+        type: string
+    type: object
+  models.WithdrawRequest:
+    properties:
+      order:
+        example: "9278923470"
+        type: string
+      sum:
+        example: 751
+        type: number
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Сервис лояльности Gophermart
+  title: Gophermart API
+  version: "1.0"
+paths:
+  /api/user/balance:
+    get:
+      description: Получение текущего баланса пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: успешная обработка запроса
+        "401":
+          description: Пользователь не аутентифицирован
+        "500":
+          description: Внутренняя ошибка сервера
+      security:
+      - CookieAuth: []
+      summary: Получение текущего баланса пользователя
+      tags:
+      - balance
+  /api/user/balance/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: Запрос на списание средств
+      parameters:
+      - description: Формат запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.WithdrawRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+        "401":
+          description: Пользователь не аутентифицирован
+        "402":
+          description: На счету недостаточно средств
+        "422":
+          description: Неверный номер заказа
+        "500":
+          description: Внутренняя ошибка сервера
+      security:
+      - CookieAuth: []
+      summary: Запрос на списание средств
+      tags:
+      - balance
+  /api/user/login:
+    post:
+      consumes:
+      - application/json
+      description: Авторизует пользователя и устанавливает JWT cookie
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь успешно зарегистрирован
+        "400":
+          description: Некорректный запрос
+        "401":
+          description: Неправильный логин или пароль
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Авторизация пользователя
+      tags:
+      - auth
+  /api/user/orders:
+    get:
+      description: Получение списка загруженных номеров заказов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+        "204":
+          description: Нет данных для ответа
+        "401":
+          description: Пользователь не аутентифицирован
+        "500":
+          description: Внутренняя ошибка сервера
+      security:
+      - CookieAuth: []
+      summary: Мои заказы
+      tags:
+      - orders
+    post:
+      consumes:
+      - text/plain
+      description: Создание заказа а так же проверка в системе лояльности
+      parameters:
+      - description: Номер заказа
+        example: "9278923470"
+        in: body
+        name: request
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Номер заказа уже был загружен этим пользователем
+        "202":
+          description: Новый номер заказа принят в обработку
+        "400":
+          description: Неверный формат запроса
+        "401":
+          description: Пользователь не аутентифицирован
+        "409":
+          description: Номер заказа уже был загружен другим пользователем
+        "422":
+          description: Неверный формат номера заказа
+        "500":
+          description: Внутренняя ошибка сервера
+      security:
+      - CookieAuth: []
+      summary: Создать заказ
+      tags:
+      - orders
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      description: Создает нового пользователя и устанавливает JWT cookie
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь успешно зарегистрирован
+        "400":
+          description: Некорректный запрос
+        "409":
+          description: Логин уже существует
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Регистрация пользователя
+      tags:
+      - auth
+  /api/user/withdrawals:
+    get:
+      description: Получение списка загруженных номеров заказов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная обработка запроса
+        "204":
+          description: Hет ни одного списания
+        "401":
+          description: Пользователь не аутентифицирован
+        "500":
+          description: Внутренняя ошибка сервера
+      security:
+      - CookieAuth: []
+      summary: Мои заказы
+      tags:
+      - balance
+swagger: "2.0"

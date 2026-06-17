@@ -1,0 +1,212 @@
+package service
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/Albert-Ti/go-diploma-tpl/internal/config"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/models"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/repository"
+	"github.com/Albert-Ti/go-diploma-tpl/internal/utils"
+)
+
+var (
+	ErrLoginAlreadyExists         = errors.New("User already exist")
+	ErrUnauthorized               = errors.New("Invalid password")
+	ErrOrderAlreadyExistsForUser  = errors.New("Order already exists for this user")
+	ErrOrderAlreadyExistsForOther = errors.New("Order already exists for other user")
+	ErrInsufficientFunds          = errors.New("insufficient funds")
+)
+
+var accrualClient = &http.Client{
+	Timeout: 60 * time.Second, // ← страховка для клиента с помощью таймаута http
+}
+
+type AccrualChecker interface {
+	CheckAccrualOrder(ctx context.Context, task models.TaskOrder) error
+}
+
+type Service struct {
+	repository repository.Repository
+}
+
+func NewService(repo repository.Repository) *Service {
+	return &Service{repository: repo}
+}
+
+func (s *Service) Register(ctx context.Context, login string, pass string) (int, error) {
+	salt, err := utils.RandomHash(8)
+
+	if err != nil {
+		return 0, err
+	}
+
+	hash := utils.HashPassword(salt, pass)
+	userID, err := s.repository.RegisterTx(ctx, login, hash)
+	classifier := repository.NewPostgresErrorClassifier()
+	classification := classifier.Classify(err)
+
+	if err != nil {
+		if classification == repository.NonRetriable {
+			return 0, ErrLoginAlreadyExists
+		}
+	}
+	return userID, nil
+}
+
+func (s *Service) Login(ctx context.Context, login string, pass string) (int, error) {
+	userID, storedHash, err := s.repository.GetUser(ctx, login)
+
+	if err != nil {
+		return 0, err
+	}
+	salt := strings.Split(storedHash, ".")[0]
+	hash := utils.HashPassword(salt, pass)
+
+	if storedHash != hash {
+		return 0, ErrUnauthorized
+	}
+
+	return userID, nil
+}
+
+func (s *Service) AddOrder(ctx context.Context, order string, userID int) error {
+	existingUserID, err := s.repository.CreateOrder(ctx, order, userID)
+	if err != nil {
+		return err
+	}
+
+	if existingUserID == 0 {
+		return nil
+	}
+
+	if existingUserID == userID {
+		return ErrOrderAlreadyExistsForUser
+	}
+
+	return ErrOrderAlreadyExistsForOther
+}
+
+func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) error {
+	// Проверка контекста WithTimeout
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	if err := s.repository.UpdateStatusOrder(ctx, task.OrderID, models.StatusProcessing); err != nil {
+		return err
+	}
+
+	accrualURL, err := url.Parse(config.Envs.AccrualSystemAddr)
+	if err != nil {
+		return err
+	}
+
+	accrualURL.Path = "api/orders/" + task.OrderID
+
+	for {
+		// Проверка контекста WithTimeout
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		slog.Info("Iteration", "task", task.OrderID)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, accrualURL.String(), nil)
+		if err != nil {
+			return err
+		}
+
+		res, err := accrualClient.Do(req)
+		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) ||
+				errors.Is(err, context.Canceled) {
+				return fmt.Errorf("accrual system timeout: %w", err)
+			}
+			return fmt.Errorf("accrual system unavailable: %w", err)
+		}
+
+		defer res.Body.Close()
+
+		switch res.StatusCode {
+		case http.StatusOK:
+			var m models.AccrualResp
+			if err := json.NewDecoder(res.Body).Decode(&m); err != nil {
+				return err
+			}
+
+			switch m.Status {
+			case "PROCESSED":
+				err := s.repository.ProcessedOrderTx(ctx, task.OrderID, models.StatusProcessed, m.Accrual, task.UserID)
+				if err != nil {
+					return err
+				}
+				return nil
+
+			case "INVALID":
+				return s.repository.UpdateStatusOrder(ctx, task.OrderID, models.StatusInvalid)
+
+			case "PROCESSING":
+				time.Sleep(time.Second * 10)
+				continue
+			}
+
+		case http.StatusNoContent:
+			time.Sleep(time.Second * 10)
+			continue
+
+		case http.StatusTooManyRequests:
+			retryAfter := res.Header.Get("Retry-After")
+			waitTime, _ := strconv.Atoi(retryAfter)
+			if waitTime == 0 {
+				waitTime = 60
+			}
+			time.Sleep(time.Second * time.Duration(waitTime))
+			continue
+
+		case http.StatusInternalServerError:
+			time.Sleep(time.Second * 30)
+			continue
+
+		default:
+			return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+		}
+
+	}
+}
+
+func (s *Service) GetOrders(ctx context.Context, userID int) ([]models.OrdersResp, error) {
+	return s.repository.GetOrders(ctx, userID)
+}
+
+func (s *Service) GetBalance(ctx context.Context, userID int) (models.BalanceResp, error) {
+	return s.repository.GetBalance(ctx, userID)
+}
+
+func (s *Service) BalanceWithdrawals(ctx context.Context, order string, sum float64, userID int) error {
+	err := s.repository.BalanceWithdrawalsTx(ctx, order, sum, userID)
+
+	if err != nil {
+		if errors.Is(err, repository.ErrInsufficientFunds) {
+			return ErrInsufficientFunds
+		}
+
+		return err
+	}
+	return nil
+}
+
+func (s *Service) GetWithdrawals(ctx context.Context, userID int) ([]models.WithdrawalsResp, error) {
+	return s.repository.GetWithdrawals(ctx, userID)
+}

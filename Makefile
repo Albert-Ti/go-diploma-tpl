@@ -1,0 +1,70 @@
+DB_URL = postgres://postgres:postgres@localhost:5432/db?sslmode=disable
+MIGRATIONS_PATH = ./migrations
+
+.PHONY: run ping test migrate-up migrate-down migrate-create
+
+run:
+	go run cmd/gophermart/main.go -d="postgres://postgres:postgres@localhost:5432/db?sslmode=disable"
+
+run-accrual:
+	./cmd/accrual/accrual_darwin_arm64 -a :8081
+
+ping:
+	curl http://localhost:8080/ping -i
+
+migrate-create:
+	@test -n "$(name)" || (echo "Error: name is required. Use: make migrate-create name=my_migration" && exit 1)
+	migrate create -ext sql -dir "$(MIGRATIONS_PATH)" -seq "$(name)"
+
+migrate-up:
+	migrate -database "$(DB_URL)" -path "$(MIGRATIONS_PATH)" up
+
+migrate-down:
+	migrate -database "$(DB_URL)" -path "$(MIGRATIONS_PATH)" down
+
+migrate-v:
+	migrate -database "$(DB_URL)" -path $(MIGRATIONS_PATH) version
+
+migrate-status:
+	migrate -database "$(DB_URL)" -path "$(MIGRATIONS_PATH)" status
+
+migrate-force:
+	@test -n "$(version)" || (echo "Error: version is required. Use: make migrate-force version=1" && exit 1)
+	migrate -database "$(DB_URL)" -path $(MIGRATIONS_PATH) force $(version)
+
+migrate-drop:
+	@echo "This will DROP EVERYTHING! Continue? [y/N]" && read ans && [ $${ans:-N} = y ]
+	migrate -database "$(DB_URL)" -path $(MIGRATIONS_PATH) drop -f
+
+migrate-reset: migrate-drop migrate-up
+	@echo "Database reset and migrations reapplied"
+
+docker-up:
+	docker compose up -d --force-recreate
+
+docker-down:
+	docker compose down
+
+docker-exec:
+	docker compose exec -t postgres bash
+
+docker-volume-rm:
+	docker volume rm shorten_url_data || true 
+
+mockgen:
+	mockgen -source=internal/repository/repository.go -destination=internal/repository/mocks/mock_repository.go -package=mocks 
+
+test:
+	go test ./... -v
+
+test-coverprofile:
+	go test ./internal/handler/... -coverprofile=coverage.out
+
+test-tool:
+	go tool cover -html=coverage.out
+
+test-total:
+	go tool cover -func=coverage.out | grep total
+
+docs-generate:
+	swag init -g cmd/gophermart/main.go
