@@ -14,6 +14,7 @@ import (
 	"github.com/Albert-Ti/go-diploma-tpl/internal/service"
 	chiMiddleware "github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/golang-migrate/migrate/v4"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -25,7 +26,11 @@ import (
 func main() {
 	config.ParseFlag()
 
-	repo, e := repository.NewRepository()
+	if err := runMigrations(config.Envs.DatabaseURI); err != nil {
+		panic(err)
+	}
+
+	repo, e := repository.NewRepository(config.Envs.DatabaseURI)
 	if e != nil {
 		panic(e)
 	}
@@ -60,4 +65,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func runMigrations(dsn string) error {
+	m, err := migrate.New("file://migrations", dsn)
+	if err != nil {
+		return err
+	}
+	defer m.Close()
+
+	err = m.Up()
+	switch err {
+	case nil:
+		slog.Info("Migrations applied successfully")
+	case migrate.ErrNoChange:
+		slog.Info("Database schema is up-to-date")
+	default:
+		return err
+	}
+	return nil
 }

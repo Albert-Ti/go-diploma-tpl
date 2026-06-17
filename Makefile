@@ -65,3 +65,6 @@ test-tool:
 
 test-total:
 	go tool cover -func=coverage.out | grep total
+
+docs-generate:
+	swag init -g cmd/gophermart/main.go
