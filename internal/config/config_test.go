@@ -24,13 +24,13 @@ func TestParseFlag(t *testing.T) {
 				"RUN_ADDRESS":            "localhost:8888",
 				"DATABASE_URI":           "postgres://test:test@localhost:5432/test",
 				"JWT_SECRET_KEY":         "test_secret_key",
-				"ACCRUAL_SYSTEM_ADDRESS": "localhost:8881",
+				"ACCRUAL_SYSTEM_ADDRESS": "http://localhost:8881",
 			},
 			want: config.Config{
 				RunAddr:           "localhost:8888",
 				DatabaseURI:       "postgres://test:test@localhost:5432/test",
 				JWTSecretKey:      "test_secret_key",
-				AccrualSystemAddr: "localhost:8881",
+				AccrualSystemAddr: "http://localhost:8881",
 			},
 		},
 		{
@@ -39,14 +39,14 @@ func TestParseFlag(t *testing.T) {
 				"test",
 				"-a=localhost:9090",
 				"-d=postgres://test:test@localhost:5432/test",
-				"-r=localhost:9000",
+				"-r=http://localhost:9000",
 			},
 			env: map[string]string{},
 			want: config.Config{
 				RunAddr:           "localhost:9090",
 				DatabaseURI:       "postgres://test:test@localhost:5432/test",
 				JWTSecretKey:      "default_secret_key",
-				AccrualSystemAddr: "localhost:9000",
+				AccrualSystemAddr: "http://localhost:9000",
 			},
 		},
 		{
@@ -57,7 +57,7 @@ func TestParseFlag(t *testing.T) {
 				RunAddr:           "localhost:8080",
 				DatabaseURI:       "",
 				JWTSecretKey:      "default_secret_key",
-				AccrualSystemAddr: "localhost:8081",
+				AccrualSystemAddr: "http://localhost:8081",
 			},
 		},
 	}

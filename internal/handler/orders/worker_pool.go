@@ -24,9 +24,13 @@ type WorkerPool struct {
 	// зашита от дублировании
 	mu        sync.Mutex
 	queueTask map[string]bool
+	ctx       context.Context
+	cancel    context.CancelFunc
 }
 
 func NewWorkerPool(svc service.AccrualChecker, numWorkers int, queueSize int) *WorkerPool {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	wp := &WorkerPool{
 		workers:   numWorkers,
 		queueSize: queueSize,
@@ -36,6 +40,8 @@ func NewWorkerPool(svc service.AccrualChecker, numWorkers int, queueSize int) *W
 		active:    atomic.Int32{},
 		dropped:   atomic.Int32{},
 		queueTask: make(map[string]bool),
+		ctx:       ctx,
+		cancel:    cancel,
 	}
 
 	go func() {
@@ -60,9 +66,15 @@ func (wp *WorkerPool) worker(id int) {
 			slog.Info("Worker Pool", "worker", id, "started task", task)
 
 			time.Sleep(time.Second)
-			if err := wp.svc.CheckAccrualOrder(context.Background(), task); err != nil {
+
+			// Страховка клиента с помощью контекста
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+			if err := wp.svc.CheckAccrualOrder(ctx, task); err != nil {
 				slog.Error("Worker Pool", "worker", id, "error", err)
 			}
+
+			cancel()
 
 			// Удаляем задачу из мапы после завершения
 			wp.mu.Lock()
@@ -101,6 +113,7 @@ func (wp *WorkerPool) AddTask(orderID string, userID int) {
 }
 
 func (wp *WorkerPool) Stop() {
+	wp.cancel()
 	close(wp.done)
 
 	wp.wg.Wait()

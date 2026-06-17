@@ -26,7 +26,7 @@ var (
 )
 
 var accrualClient = &http.Client{
-	Timeout: 60 * time.Second, // ← страховка для клиента
+	Timeout: 60 * time.Second, // ← страховка для клиента с помощью таймаута http
 }
 
 type AccrualChecker interface {
@@ -95,6 +95,13 @@ func (s *Service) AddOrder(ctx context.Context, order string, userID int) error 
 }
 
 func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) error {
+	// Проверка контекста WithTimeout
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	if err := s.repository.UpdateStatusOrder(ctx, task.OrderID, models.StatusProcessing); err != nil {
 		return err
 	}
@@ -107,6 +114,13 @@ func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) 
 	accrualURL.Path = "api/orders/" + task.OrderID
 
 	for {
+		// Проверка контекста WithTimeout
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		slog.Info("Iteration", "task", task.OrderID)
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, accrualURL.String(), nil)
 		if err != nil {
@@ -115,7 +129,10 @@ func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) 
 
 		res, err := accrualClient.Do(req)
 		if err != nil {
-			time.Sleep(time.Second * 30)
+			if errors.Is(err, context.DeadlineExceeded) ||
+				errors.Is(err, context.Canceled) {
+				return fmt.Errorf("accrual system timeout: %w", err)
+			}
 			return fmt.Errorf("accrual system unavailable: %w", err)
 		}
 
