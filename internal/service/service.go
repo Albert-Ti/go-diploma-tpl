@@ -25,6 +25,10 @@ var (
 	ErrOrderAlreadyExistsForOther = errors.New("Order already exists for other user")
 )
 
+var accrualClient = &http.Client{
+	Timeout: 60 * time.Second, // ← страховка для клиента
+}
+
 type AccrualChecker interface {
 	CheckAccrualOrder(ctx context.Context, task models.TaskOrder) error
 }
@@ -109,10 +113,10 @@ func (s *Service) CheckAccrualOrder(ctx context.Context, task models.TaskOrder) 
 			return err
 		}
 
-		res, err := http.DefaultClient.Do(req)
+		res, err := accrualClient.Do(req)
 		if err != nil {
 			time.Sleep(time.Second * 30)
-			continue
+			return fmt.Errorf("accrual system unavailable: %w", err)
 		}
 
 		defer res.Body.Close()
