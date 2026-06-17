@@ -68,7 +68,7 @@ func (wp *WorkerPool) worker(id int) {
 			time.Sleep(time.Second)
 
 			// Страховка клиента с помощью контекста
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
 			if err := wp.svc.CheckAccrualOrder(ctx, task); err != nil {
 				slog.Error("Worker Pool", "worker", id, "error", err)
